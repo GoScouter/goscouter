@@ -86,15 +86,19 @@ func main() {
         input = strings.TrimSpace(input)
         parts := strings.Split(input, " ")
 
-        cmd, err := commandManager.GetCommand(parts[0])
+        command, err := commandManager.GetCommand(parts[0])
         if err != nil {
-            fmt.Println(err)
+            fmt.Printf("%s\r\n", err)
             continue
         }
 
-        err = cmd.Exec(parts[1:])
+        err = command.Exec(parts[1:])
         if err != nil {
-            fmt.Println(err)
+            if errors.Is(err, cmd.ErrExit) {
+                break
+            }
+
+            fmt.Printf("%s\r\n", err)
             continue
         }
    }
