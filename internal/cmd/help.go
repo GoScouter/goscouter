@@ -23,6 +23,9 @@ func (cmd *HelpCommand) Exec(args []string) error {
         msg += fmt.Sprintf("[*] %s - %s\r\n", command.Name(), command.Description())
     }
 
+    msg += "\r\nList of available flags:\r\n"
+    msg += "[*] --target -- Determines the site that goscouter will target.\r\n"
+
     fmt.Printf("%s\r\n", msg)
     return nil
 }

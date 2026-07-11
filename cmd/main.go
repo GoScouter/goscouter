@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 	"goscouter/internal/cmd"
 	"goscouter/internal/logger"
 	"goscouter/internal/terminal"
+	"goscouter/internal/web"
 )
 
 var BANNER = `
@@ -39,6 +41,14 @@ var BUILD_TIME string
 var interrupted atomic.Bool
 
 func main() {
+    targetSite := flag.String("target", "", "The site to target")
+    flag.Parse()
+
+    if *targetSite == "" {
+        fmt.Println("Usage: gs --target <https://example.com>")
+        os.Exit(1)
+    }
+
     printBanner()
 
     err := logger.SetupLogger(logger.LoggerConfig{
@@ -49,6 +59,13 @@ func main() {
         panic(err)
     }
 
+    fmt.Printf("Targeting site: %s\n", *targetSite)
+    if !web.IsValidSite(*targetSite) {
+        fmt.Println("Cannot reach targeted website!")
+        os.Exit(1)
+    }
+
+    fmt.Println("Successfully connected to the target website!")
     logger.Log.Info("Entering terminal raw mode")
     restore, err := terminal.EnterRawMode()
     if err != nil {
