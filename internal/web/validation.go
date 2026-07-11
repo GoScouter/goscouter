@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"goscouter/internal/logger"
 	"net/http"
-	"net/url"
 	"time"
 )
 
