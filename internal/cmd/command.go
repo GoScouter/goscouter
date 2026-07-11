@@ -1,11 +1,14 @@
 package cmd
 
-import "fmt"
-
-var registry = map[string]Command{}
+import (
+	"fmt"
+	"slices"
+    "maps"
+)
 
 type Command interface {
     Name() string
+    Description() string
     Exec(args []string) error
 }
 
@@ -19,6 +22,9 @@ func NewCommandManager() *CommandManager {
     }
 
     cm.AddCommand(&ExitCommand{})
+    cm.AddCommand(&HelpCommand{
+        Commands: slices.Collect(maps.Values(cm.Commands)),
+    })
     return cm
 }
 

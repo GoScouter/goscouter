@@ -7,10 +7,12 @@ import (
 
 type stubCommand struct {
 	name    string
-	execErr error
+	description string
+    execErr error
 }
 
 func (c *stubCommand) Name() string             { return c.name }
+func (c *stubCommand) Description() string             { return c.description }
 func (c *stubCommand) Exec(args []string) error { return c.execErr }
 
 func TestNewCommandManagerRegistersExit(t *testing.T) {
