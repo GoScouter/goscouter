@@ -22,6 +22,7 @@ func NewCommandManager() *CommandManager {
     }
 
     cm.AddCommand(&ExitCommand{})
+    cm.AddCommand(&ClearCommand{})
     cm.AddCommand(&HelpCommand{
         Commands: slices.Collect(maps.Values(cm.Commands)),
     })
