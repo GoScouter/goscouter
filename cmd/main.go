@@ -68,7 +68,7 @@ func main() {
 
     reader := bufio.NewReader(os.Stdin)
     for !interrupted.Load() {
-        fmt.Print("> ")
+        fmt.Print("(gs) > ")
 
         input, err := terminal.ReadLine(reader, os.Stdout)
         if err != nil {
