@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"goscouter/internal/logger"
+	"maps"
 	"slices"
-    "maps"
 )
 
 type Command interface {
@@ -21,11 +22,18 @@ func NewCommandManager() *CommandManager {
         Commands: make(map[string]Command),
     }
 
+    logger.Log.Info("Loading built-in commands")
     cm.AddCommand(&ExitCommand{})
     cm.AddCommand(&ClearCommand{})
     cm.AddCommand(&HelpCommand{
         Commands: slices.Collect(maps.Values(cm.Commands)),
     })
+
+    logger.Log.Info("Loaded built-in commands.")
+    for k := range cm.Commands {
+        logger.Log.Info(fmt.Sprintf("%s command", k))
+    }
+
     return cm
 }
 
