@@ -16,9 +16,9 @@ func (c *stubCommand) Description() string             { return c.description }
 func (c *stubCommand) Exec(args []string) error { return c.execErr }
 
 func TestNewCommandManagerRegistersExit(t *testing.T) {
-	cm := NewCommandManager()
+	cm := NewManager("", nil)
 
-	got, err := cm.GetCommand("exit")
+	got, err := cm.Get("exit")
 	if err != nil {
 		t.Fatalf("expected exit command to be registered, got error: %v", err)
 	}
@@ -28,19 +28,19 @@ func TestNewCommandManagerRegistersExit(t *testing.T) {
 }
 
 func TestGetCommandUnknown(t *testing.T) {
-	cm := NewCommandManager()
+	cm := NewManager("", nil)
 
-	if _, err := cm.GetCommand("nope"); err == nil {
+	if _, err := cm.Get("nope"); err == nil {
 		t.Fatal("expected error for unknown command, got nil")
 	}
 }
 
 func TestAddAndGetCommand(t *testing.T) {
-	cm := NewCommandManager()
+	cm := NewManager("", nil)
 	cmd := &stubCommand{name: "hello"}
-	cm.AddCommand(cmd)
+	cm.Add(cmd)
 
-	got, err := cm.GetCommand("hello")
+	got, err := cm.Get("hello")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -50,11 +50,11 @@ func TestAddAndGetCommand(t *testing.T) {
 }
 
 func TestRemoveCommand(t *testing.T) {
-	cm := NewCommandManager()
-	cm.AddCommand(&stubCommand{name: "hello"})
-	cm.RemoveCommand("hello")
+	cm := NewManager("", nil)
+	cm.Add(&stubCommand{name: "hello"})
+	cm.Remove("hello")
 
-	if _, err := cm.GetCommand("hello"); err == nil {
+	if _, err := cm.Get("hello"); err == nil {
 		t.Fatal("expected error after removing command, got nil")
 	}
 }

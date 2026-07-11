@@ -15,6 +15,7 @@ import (
 
 	"goscouter/internal/cmd"
 	"goscouter/internal/logger"
+	"goscouter/internal/module"
 	"goscouter/internal/terminal"
 	"goscouter/internal/web"
 )
@@ -72,8 +73,11 @@ func main() {
         panic(err)
     }
 
+    logger.Log.Info("Loading modules")
+    moduleManager := module.NewManager()
+
     logger.Log.Info("Starting command manager")
-    commandManager := cmd.NewCommandManager()
+    commandManager := cmd.NewManager(*targetSite, moduleManager)
 
     sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -103,7 +107,7 @@ func main() {
         input = strings.TrimSpace(input)
         parts := strings.Split(input, " ")
 
-        command, err := commandManager.GetCommand(parts[0])
+        command, err := commandManager.Get(parts[0])
         if err != nil {
             fmt.Printf("%s\r\n", err)
             continue
