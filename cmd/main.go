@@ -17,9 +17,30 @@ import (
 	"goscouter/internal/terminal"
 )
 
+var BANNER = `
+ ██████╗  ██████╗ ███████╗ ██████╗ ██████╗ ██╗   ██╗████████╗███████╗██████╗
+██╔════╝ ██╔═══██╗██╔════╝██╔════╝██╔═══██╗██║   ██║╚══██╔══╝██╔════╝██╔══██╗
+██║  ███╗██║   ██║███████╗██║     ██║   ██║██║   ██║   ██║   █████╗  ██████╔╝
+██║   ██║██║   ██║╚════██║██║     ██║   ██║██║   ██║   ██║   ██╔══╝  ██╔══██╗
+╚██████╔╝╚██████╔╝███████║╚██████╗╚██████╔╝╚██████╔╝   ██║   ███████╗██║  ██║
+ ╚═════╝  ╚═════╝ ╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚═╝  ╚═╝
+`
+
+
+const (
+	NAME = "GS"
+
+	PURPLE = "\033[38;2;87;87;232m"
+	RESET = "\033[0m"
+)
+
+var BUILD_TIME string
+
 var interrupted atomic.Bool
 
 func main() {
+    printBanner()
+
     err := logger.SetupLogger(logger.LoggerConfig{
         Console: false,
         Level:   slog.LevelInfo,
@@ -65,18 +86,14 @@ func main() {
         input = strings.TrimSpace(input)
         parts := strings.Split(input, " ")
 
-        command, err := commandManager.GetCommand(parts[0])
+        cmd, err := commandManager.GetCommand(parts[0])
         if err != nil {
             fmt.Println(err)
             continue
         }
 
-        err = command.Exec(parts[1:])
+        err = cmd.Exec(parts[1:])
         if err != nil {
-            if errors.Is(err, cmd.ErrExit) {
-                break
-            }
-
             fmt.Println(err)
             continue
         }
@@ -84,4 +101,18 @@ func main() {
 
     logger.Log.Info("Exiting terminal raw mode, restoring old state")
     defer restore()
+}
+
+func printBanner() {
+	fmt.Print(PURPLE)
+	fmt.Print(BANNER)
+	fmt.Print(RESET)
+	fmt.Println()
+
+	buildTime := BUILD_TIME
+	if buildTime == "" {
+		buildTime = "unknown"
+	}
+
+	fmt.Printf("\t\t\t%s • %s\n\n", NAME, buildTime)
 }
