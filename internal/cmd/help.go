@@ -24,7 +24,7 @@ func (cmd *HelpCommand) Exec(args []string) error {
     }
 
     msg += "\r\nList of available flags:\r\n"
-    msg += "[*] --target -- Determines the site that goscouter will target.\r\n"
+    msg += "[*] --target -- Determines the site that goscouter will target (requires http/https prefix).\r\n"
 
     fmt.Printf("%s\r\n", msg)
     return nil
