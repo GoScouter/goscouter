@@ -13,10 +13,6 @@ import (
 const TIMEOUT time.Duration = 5 * time.Second
 
 func IsValidSite(siteURL string) bool {
-    if !IsWebsite(siteURL) {
-        return false
-    }
-
     code, err := CheckSiteStatus(siteURL)
     if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -29,23 +25,6 @@ func IsValidSite(siteURL string) bool {
     }
 
     return code >= 200 && code <= 299
-}
-
-func IsWebsite(siteURL string) bool {
-    u, err := url.ParseRequestURI(siteURL)
-	if err != nil {
-		return false
-	}
-
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return false
-	}
-
-    if u.Host == "" {
-		return false
-	}
-
-	return true
 }
 
 func CheckSiteStatus(siteURL string) (int, error) {
