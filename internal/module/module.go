@@ -1,23 +1,15 @@
 package module
 
-import (
-	"fmt"
-
-	"goscouter/internal/dns"
-	"goscouter/internal/web"
-)
+import "fmt"
 
 type Module interface {
 	Name() string
 	Description() string
-	Scout(target string) (*Records, error)
+	Scout(target string) (Result, error)
 }
 
-type Records struct {
-	Target string
-	Host   string
-	DNS    *dns.Records
-	HTTP   *web.HTTPRecords
+type Result interface {
+	Render() string
 }
 
 type Manager struct {

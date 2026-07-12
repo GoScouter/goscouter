@@ -18,8 +18,11 @@ type fakeModule struct {
 
 func (m *fakeModule) Name() string        { return "records" }
 func (m *fakeModule) Description() string  { return "fake" }
-func (m *fakeModule) Scout(target string) (*module.Records, error) {
+func (m *fakeModule) Scout(target string) (module.Result, error) {
 	m.gotArg = target
+	if m.records == nil {
+		return nil, m.err
+	}
 	return m.records, m.err
 }
 
