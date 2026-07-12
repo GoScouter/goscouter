@@ -5,11 +5,25 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
+	"strings"
 
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
 )
+
+func execSuffix() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}
+
+func commandName(path string) string {
+	base := filepath.Base(path)
+	return strings.TrimSuffix(base, execSuffix())
+}
 
 type Command interface {
     Name() string
@@ -80,7 +94,7 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     for _, ex := range external {
 		cm.Add(&ExternalCommand{
             Target: target,
-            ModuleName: filepath.Base(ex),
+            ModuleName: commandName(ex),
             Module: ex,
         })
     }
