@@ -8,6 +8,8 @@ import (
 
 	"goscouter/internal/dns"
 	"goscouter/internal/web"
+
+	"github.com/GoScouter/sdk"
 )
 
 type RecordsModule struct{}
@@ -20,7 +22,11 @@ func (m *RecordsModule) Description() string {
 	return "Gather the DNS and HTTP records of the target website."
 }
 
-func (m *RecordsModule) Scout(target string) (Result, error) {
+func (m *RecordsModule) Version() string {
+    return "0.0.1"
+}
+
+func (m *RecordsModule) Scout(target string) (sdk.Result, error) {
 	host, err := hostFromTarget(target)
 	if err != nil {
 		return nil, err

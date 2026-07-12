@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"maps"
+	"os"
+	"path/filepath"
+	"slices"
+
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
-	"maps"
-	"slices"
 )
 
 type Command interface {
@@ -18,7 +21,18 @@ type Manager struct {
     Commands map[string]Command
 }
 
-func NewManager(target string, modules *module.Manager) *Manager {
+func filePathWalkDir(root string) ([]string, error) {
+    var files []string
+    err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+        if !info.IsDir() {
+            files = append(files, path)
+        }
+        return nil
+    })
+    return files, err
+}
+
+func NewManager(target string, moduleManager *module.Manager) (*Manager, error) {
     cm := &Manager {
         Commands: make(map[string]Command),
     }
@@ -27,12 +41,14 @@ func NewManager(target string, modules *module.Manager) *Manager {
     cm.Add(&ExitCommand{})
     cm.Add(&ClearCommand{})
 
-    if modules != nil {
-        if recordsMod, err := modules.Get("records"); err == nil {
-            cm.Add(&RecordsCommand{Target: target, Module: recordsMod})
-        } else {
-            logger.Log.Error(err.Error())
-        }
+    if moduleManager != nil {
+		mods := moduleManager.GetAll()
+		for _, mod := range mods {
+			cm.Add(&ModuleCommand{
+				Target: target,
+				Module: mod,
+			})
+		}
     }
 
     cm.Add(&HelpCommand{
@@ -44,16 +60,37 @@ func NewManager(target string, modules *module.Manager) *Manager {
         logger.Log.Info(fmt.Sprintf("%s command", k))
     }
 
-    return cm
+    logger.Log.Info("Loading external commands")
+    cacheDir, err := os.UserCacheDir()
+    if err != nil {
+        return nil, err
+    }
+
+    cacheDir = filepath.Join(cacheDir, "gs")
+    logger.Log.Info(fmt.Sprintf("Looking at: %s", cacheDir))
+    external, err := filePathWalkDir(cacheDir)
+    if err != nil {
+        return nil, err
+    }
+
+    for _, ex := range external {
+		cm.Add(&ExternalCommand{
+            Target: target,
+            ModuleName: filepath.Base(ex),
+            Module: ex,
+        })
+    }
+
+    return cm, nil
 }
 
 func (cm *Manager) Get(name string) (Command, error) {
     cmd, ok := cm.Commands[name]
-    if !ok {
-        return nil, fmt.Errorf("%s - command does not exists", name)
+    if ok {
+        return cmd, nil
     }
 
-    return cmd, nil
+    return nil, fmt.Errorf("%s - command does not exists", name)
 }
 
 func (cm *Manager) Add(cmd Command) {

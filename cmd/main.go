@@ -77,7 +77,10 @@ func main() {
     moduleManager := module.NewManager()
 
     logger.Log.Info("Starting command manager")
-    commandManager := cmd.NewManager(*targetSite, moduleManager)
+    commandManager, err := cmd.NewManager(*targetSite, moduleManager)
+	if err != nil {
+		panic(err)
+	}
 
     sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -108,7 +111,7 @@ func main() {
         parts := strings.Split(input, " ")
 
         command, err := commandManager.Get(parts[0])
-        if err != nil {
+		if err != nil {
             fmt.Printf("%s\r\n", err)
             continue
         }

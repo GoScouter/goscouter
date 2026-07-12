@@ -1,36 +1,36 @@
 package module
 
-import "fmt"
+import (
+	"fmt"
+	"maps"
+	"slices"
 
-type Module interface {
-	Name() string
-	Description() string
-	Scout(target string) (Result, error)
-}
-
-type Result interface {
-	Render() string
-}
+	"github.com/GoScouter/sdk"
+)
 
 type Manager struct {
-	Modules map[string]Module
+    Modules map[string]sdk.Module
 }
 
 func NewManager() *Manager {
-	m := &Manager{Modules: make(map[string]Module)}
+	m := &Manager{Modules: make(map[string]sdk.Module)}
 	m.Add(&RecordsModule{})
 	return m
 }
 
-func (m *Manager) Add(mod Module) {
+func (m *Manager) Add(mod sdk.Module) {
 	m.Modules[mod.Name()] = mod
 }
 
-func (m *Manager) Get(name string) (Module, error) {
+func (m *Manager) Get(name string) (sdk.Module, error) {
 	mod, ok := m.Modules[name]
 	if !ok {
 		return nil, fmt.Errorf("%s - module does not exist", name)
 	}
 
 	return mod, nil
+}
+
+func (m *Manager) GetAll() ([]sdk.Module) {
+    return slices.Collect(maps.Values(m.Modules))
 }
