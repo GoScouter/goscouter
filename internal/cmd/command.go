@@ -67,6 +67,10 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     }
 
     cacheDir = filepath.Join(cacheDir, "gs")
+    if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+        return nil, err
+    }
+
     logger.Log.Info(fmt.Sprintf("Looking at: %s", cacheDir))
     external, err := filePathWalkDir(cacheDir)
     if err != nil {
