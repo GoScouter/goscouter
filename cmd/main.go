@@ -37,7 +37,10 @@ const (
 	RESET = "\033[0m"
 )
 
-var BUILD_TIME string
+var (
+	BUILD_TIME string
+	VERSION    string
+)
 
 var interrupted atomic.Bool
 
@@ -142,5 +145,10 @@ func printBanner() {
 		buildTime = "unknown"
 	}
 
-	fmt.Printf("\t\t\t%s • %s\n\n", NAME, buildTime)
+	version := VERSION
+	if version == "" {
+		version = "dev"
+	}
+
+	fmt.Printf("\t\t\t%s %s • %s\n\n", NAME, version, buildTime)
 }

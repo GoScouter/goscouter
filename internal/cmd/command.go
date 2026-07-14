@@ -53,6 +53,7 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     cm.Add(&ExitCommand{})
     cm.Add(&ClearCommand{})
     cm.Add(&InstallCommand{Manager: cm, Target: target})
+    cm.Add(&UninstallCommand{Manager: cm})
     cm.Add(&HelpCommand{Manager: cm})
 
     logger.Log.Info("Loaded built-in commands.")

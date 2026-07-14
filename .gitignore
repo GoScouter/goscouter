@@ -1,5 +1,7 @@
 # Local
 gs
+dist/
+coverage.out
 
 # macOS
 .DS_Store
