@@ -8,8 +8,9 @@ import (
 
 	"goscouter/internal/dns"
 	"goscouter/internal/web"
+	"goscouter/pkg/records"
 
-	"github.com/GoScouter/sdk"
+    "github.com/GoScouter/sdk"
 )
 
 type RecordsModule struct{}
@@ -54,8 +55,8 @@ func (m *RecordsModule) Scout(target string) (sdk.Result, error) {
 type Records struct {
 	Target string
 	Host   string
-	DNS    *dns.Records
-	HTTP   *web.HTTPRecords
+	DNS    *records.DNSRecords
+	HTTP   *records.HTTPRecords
 }
 
 func (r *Records) Render() string {
