@@ -5,26 +5,18 @@ import (
 	"fmt"
 	"net"
 	"time"
+
+    "goscouter/pkg/records"
 )
 
 const TIMEOUT time.Duration = 5 * time.Second
 
-type Records struct {
-	Host  string
-	A     []string
-	AAAA  []string
-	CNAME string
-	MX    []string
-	NS    []string
-	TXT   []string
-}
-
-func Lookup(host string) (*Records, error) {
+func Lookup(host string) (*records.DNSRecords, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	resolver := net.DefaultResolver
-	records := &Records{Host: host}
+	records := &records.DNSRecords{Host: host}
 
 	ips, ipErr := resolver.LookupIP(ctx, "ip", host)
 	for _, ip := range ips {

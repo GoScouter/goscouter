@@ -5,18 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+    "goscouter/pkg/records"
 )
 
-type HTTPRecords struct {
-	RequestURL string
-	FinalURL   string
-	StatusCode int
-	Status     string
-	Proto      string
-	Headers    http.Header
-}
-
-func FetchHTTPRecords(siteURL string) (*HTTPRecords, error) {
+func FetchHTTPRecords(siteURL string) (*records.HTTPRecords, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
@@ -35,7 +28,7 @@ func FetchHTTPRecords(siteURL string) (*HTTPRecords, error) {
 	}
 	defer resp.Body.Close()
 
-	return &HTTPRecords{
+	return &records.HTTPRecords{
 		RequestURL: siteURL,
 		FinalURL:   resp.Request.URL.String(),
 		StatusCode: resp.StatusCode,
