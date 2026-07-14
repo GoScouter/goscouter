@@ -54,16 +54,7 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     logger.Log.Info("Loading built-in commands")
     cm.Add(&ExitCommand{})
     cm.Add(&ClearCommand{})
-
-    if moduleManager != nil {
-		mods := moduleManager.GetAll()
-		for _, mod := range mods {
-			cm.Add(&ModuleCommand{
-				Target: target,
-				Module: mod,
-			})
-		}
-    }
+    cm.Add(&InstallCommand{})
 
     cm.Add(&HelpCommand{
         Commands: slices.Collect(maps.Values(cm.Commands)),
@@ -83,6 +74,16 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     cacheDir = filepath.Join(cacheDir, "gs")
     if err := os.MkdirAll(cacheDir, 0o755); err != nil {
         return nil, err
+    }
+
+    if moduleManager != nil {
+		mods := moduleManager.GetAll()
+		for _, mod := range mods {
+			cm.Add(&ModuleCommand{
+				Target: target,
+				Module: mod,
+			})
+		}
     }
 
     logger.Log.Info(fmt.Sprintf("Looking at: %s", cacheDir))
