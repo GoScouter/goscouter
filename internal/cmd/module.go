@@ -20,7 +20,7 @@ func (cmd *ModuleCommand) Description() string {
 }
 
 func (cmd *ModuleCommand) Exec(args []string) error {
-	result, err := cmd.Module.Scout(cmd.Target)
+	result, err := cmd.Module.Scout(cmd.Target, args)
 	if err != nil {
 		return err
 	}

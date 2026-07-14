@@ -9,7 +9,7 @@ import (
     "goscouter/pkg/records"
 )
 
-func FetchHTTPRecords(siteURL string) (*records.HTTPRecords, error) {
+func FetchHTTPRecords(siteURL, scheme string) (*records.HTTPRecords, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
@@ -29,11 +29,12 @@ func FetchHTTPRecords(siteURL string) (*records.HTTPRecords, error) {
 	defer resp.Body.Close()
 
 	return &records.HTTPRecords{
+        Scheme:     scheme,
 		RequestURL: siteURL,
 		FinalURL:   resp.Request.URL.String(),
 		StatusCode: resp.StatusCode,
 		Status:     resp.Status,
 		Proto:      resp.Proto,
 		Headers:    resp.Header,
-	}, nil
+    }, nil
 }

@@ -15,7 +15,9 @@ type Manager struct {
 func NewManager() *Manager {
 	m := &Manager{Modules: make(map[string]sdk.Module)}
 	m.Add(&RecordsModule{})
-	return m
+	m.Add(&SubdomainsModule{})
+    m.Add(&HttpModule{})
+    return m
 }
 
 func (m *Manager) Add(mod sdk.Module) {

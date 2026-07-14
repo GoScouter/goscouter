@@ -26,7 +26,7 @@ func (cmd *ExternalCommand) Exec(args []string) error {
         return err
     }
 
-    res, err := bin.Scout(cmd.Target)
+    res, err := bin.Scout(cmd.Target, args)
     if err != nil {
         return err
     }

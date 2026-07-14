@@ -17,7 +17,7 @@ import (
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
 	"goscouter/internal/terminal"
-	"goscouter/internal/web"
+	_ "goscouter/internal/web"
 )
 
 var BANNER = `
@@ -63,13 +63,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("Targeting site: %s\n", *targetSite)
-    if !web.IsValidSite(*targetSite) {
-        fmt.Println("Cannot reach targeted website!")
-        os.Exit(1)
-    }
-
-    fmt.Println("Successfully connected to the target website!")
+    fmt.Printf("Target: %s\n", *targetSite)
     logger.Log.Info("Entering terminal raw mode")
     restore, err := terminal.EnterRawMode()
     if err != nil {
