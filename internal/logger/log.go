@@ -14,6 +14,21 @@ type LoggerConfig struct {
 
 var Log *slog.Logger
 
+// logFile is the file handle backing Log, retained so it can be closed.
+var logFile *os.File
+
+// Close releases the log file handle. Safe to call when the logger was never
+// set up. On Windows an open handle prevents the file from being removed, so
+// tests (and any short-lived setup) must call this before cleanup.
+func Close() error {
+	if logFile == nil {
+		return nil
+	}
+	err := logFile.Close()
+	logFile = nil
+	return err
+}
+
 func LogPath() (string, error) {
 	dir, err := os.UserHomeDir()
 	if err != nil {
@@ -55,6 +70,7 @@ func SetupLogger(cfg LoggerConfig) error {
 
 	handler := slog.NewTextHandler(writer, opts)
     Log = slog.New(handler)
+    logFile = file
 
     return nil
 }

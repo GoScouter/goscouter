@@ -38,6 +38,9 @@ func TestSetupLogger(t *testing.T) {
 	if err := SetupLogger(LoggerConfig{Console: false, Level: slog.LevelInfo}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	// Windows cannot remove a file while a handle is open; release it before
+	// t.TempDir's cleanup runs so RemoveAll succeeds.
+	defer Close()
 	if Log == nil {
 		t.Fatal("expected Log to be initialized")
 	}

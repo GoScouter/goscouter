@@ -65,6 +65,7 @@ jobs:
           cache: true
 
       - name: Test
+        shell: bash
         run: go test -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage
