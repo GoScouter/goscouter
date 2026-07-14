@@ -9,7 +9,7 @@ import (
 func TestManagerRegistersModules(t *testing.T) {
 	m := NewManager()
 
-	for _, name := range []string{"dns", "subdomains", "http"} {
+	for _, name := range []string{"dns", "subdomains", "http", "scan"} {
 		mod, err := m.Get(name)
 		if err != nil {
 			t.Errorf("Get(%q): unexpected error: %v", name, err)
@@ -31,8 +31,8 @@ func TestManagerGetUnknown(t *testing.T) {
 func TestManagerGetAll(t *testing.T) {
 	m := NewManager()
 	all := m.GetAll()
-	if len(all) != 3 {
-		t.Fatalf("GetAll() returned %d modules, want 3", len(all))
+	if len(all) != 4 {
+		t.Fatalf("GetAll() returned %d modules, want 4", len(all))
 	}
 }
 
@@ -53,6 +53,7 @@ func TestModuleMetadata(t *testing.T) {
 		{&RecordsModule{}, "dns"},
 		{&SubdomainsModule{}, "subdomains"},
 		{&HttpModule{}, "http"},
+		{&ScanModule{}, "scan"},
 	}
 	for _, c := range cases {
 		if c.mod.Name() != c.name {
