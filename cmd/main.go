@@ -49,7 +49,7 @@ func main() {
     flag.Parse()
 
     if *targetSite == "" {
-        fmt.Println("Usage: gs --target <https://example.com>")
+        fmt.Println("Usage: gs --target <example.com>")
         os.Exit(1)
     }
 
