@@ -8,12 +8,44 @@ import (
 	"os"
 	"strings"
 
+	"goscouter/internal/logger"
 	"goscouter/internal/scan"
 
 	"github.com/GoScouter/sdk"
 )
 
-type ScanModule struct{}
+type ScanModule struct {
+	Manager *Manager
+}
+
+var scanExcluded = map[string]bool{
+	"subdomains": true,
+	"scan":       true,
+}
+
+func (m *ScanModule) modulesForScan() []sdk.Module {
+	var mods []sdk.Module
+
+	if m.Manager != nil {
+		for _, mod := range m.Manager.GetAll() {
+			if !scanExcluded[mod.Name()] {
+				mods = append(mods, mod)
+			}
+		}
+	}
+
+	external, err := LoadExternal()
+	if err != nil {
+		logger.Log.Warn(fmt.Sprintf("scan: loading external modules: %v", err))
+	}
+	for _, mod := range external {
+		if !scanExcluded[mod.Name()] {
+			mods = append(mods, mod)
+		}
+	}
+
+	return mods
+}
 
 func (m *ScanModule) Name() string {
 	return "scan"
@@ -51,7 +83,7 @@ func (m *ScanModule) Scout(target string, args []string) (sdk.Result, error) {
 		return nil, err
 	}
 
-	graph, err := scan.Build(context.Background(), target)
+	graph, err := scan.Build(context.Background(), target, m.modulesForScan())
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,6 @@ package scan
 import (
 	"strings"
 	"testing"
-
-	"goscouter/pkg/records"
 )
 
 func TestHostOf(t *testing.T) {
@@ -25,14 +23,14 @@ func TestHostOf(t *testing.T) {
 }
 
 func TestReachable(t *testing.T) {
-	if (HostReport{HTTPErr: "x", HTTPSErr: "y"}).Reachable() {
-		t.Error("host with only errors should not be reachable")
+	if (HostReport{Results: []ModuleResult{{Module: "http", Err: "x"}, {Module: "dns", Err: "y"}}}).Reachable() {
+		t.Error("host where every module errored should not be reachable")
 	}
-	if !(HostReport{HTTP: &records.HTTPRecords{}}).Reachable() {
-		t.Error("host with an HTTP response should be reachable")
+	if (HostReport{Results: []ModuleResult{{Module: "http"}}}).Reachable() {
+		t.Error("host with only empty output should not be reachable")
 	}
-	if !(HostReport{HTTPS: &records.HTTPRecords{}}).Reachable() {
-		t.Error("host with an HTTPS response should be reachable")
+	if !(HostReport{Results: []ModuleResult{{Module: "http", Output: "200 OK"}}}).Reachable() {
+		t.Error("host with module output should be reachable")
 	}
 }
 
@@ -40,17 +38,19 @@ func sampleGraph() *Graph {
 	return &Graph{Root: &Node{
 		Report: HostReport{
 			Host: "example.com",
-			DNS:  &records.DNSRecords{Host: "example.com", A: []string{"93.184.216.34"}},
-			HTTP: &records.HTTPRecords{Status: "200 OK", Proto: "HTTP/1.1"},
+			Results: []ModuleResult{
+				{Module: "dns", Output: "A 93.184.216.34"},
+				{Module: "http", Output: "200 OK"},
+			},
 		},
 		Children: []*Node{
 			{Report: HostReport{
-				Host:  "api.example.com",
-				HTTPS: &records.HTTPRecords{Status: "200 OK"},
+				Host:    "api.example.com",
+				Results: []ModuleResult{{Module: "http", Output: "200 OK"}},
 			}},
 			{Report: HostReport{
 				Host:    "dead.example.com",
-				HTTPErr: "connection refused",
+				Results: []ModuleResult{{Module: "http", Err: "connection refused"}},
 			}},
 		},
 	}}

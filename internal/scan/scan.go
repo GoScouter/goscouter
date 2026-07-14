@@ -7,15 +7,15 @@ import (
 	"strings"
 	"sync"
 
-	"goscouter/internal/dns"
 	"goscouter/internal/net/subdomain"
-	"goscouter/internal/web"
+
+	"github.com/GoScouter/sdk"
 )
 
 // maxConcurrentProbes bounds how many hosts are probed at once. There is no cap
-// on how many subdomains get scanned, only on simultaneous in-flight sockets so
-// a domain with hundreds of subdomains does not open hundreds of connections at
-// once.
+// on how many subdomains get scanned, only on simultaneous in-flight hosts so
+// a domain with hundreds of subdomains does not spawn hundreds of module runs
+// at once. Modules run sequentially within a single host.
 const maxConcurrentProbes = 12
 
 func hostOf(target string) string {
@@ -38,11 +38,11 @@ func hostOf(target string) string {
 	return t
 }
 
-func Build(ctx context.Context, target string) (*Graph, error) {
+func Build(ctx context.Context, target string, mods []sdk.Module) (*Graph, error) {
 	host := hostOf(target)
 
 	subs, _ := subdomain.FindAll(ctx, host)
-	root := &Node{Report: probeHost(host)}
+	root := &Node{Report: probeHost(host, mods)}
 
 	sem := make(chan struct{}, maxConcurrentProbes)
 	var wg sync.WaitGroup
@@ -60,7 +60,7 @@ func Build(ctx context.Context, target string) (*Graph, error) {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			child := &Node{Report: probeHost(name)}
+			child := &Node{Report: probeHost(name, mods)}
 			mu.Lock()
 			root.Children = append(root.Children, child)
 			mu.Unlock()
@@ -75,26 +75,22 @@ func Build(ctx context.Context, target string) (*Graph, error) {
 	return &Graph{Root: root}, nil
 }
 
-func probeHost(host string) HostReport {
+func probeHost(host string, mods []sdk.Module) HostReport {
 	report := HostReport{Host: host}
 
-	if rec, err := dns.Lookup(host); err != nil {
-		report.DNSErr = err.Error()
-	} else {
-		report.DNS = rec
+	for _, mod := range mods {
+		result := ModuleResult{Module: mod.Name()}
+		if res, err := mod.Scout(host, nil); err != nil {
+			result.Err = err.Error()
+		} else {
+			result.Output = res.Render()
+		}
+		report.Results = append(report.Results, result)
 	}
 
-	if rec, err := web.FetchHTTPRecords("http://"+host, "HTTP"); err != nil {
-		report.HTTPErr = err.Error()
-	} else {
-		report.HTTP = rec
-	}
-
-	if rec, err := web.FetchHTTPRecords("https://"+host, "HTTPS"); err != nil {
-		report.HTTPSErr = err.Error()
-	} else {
-		report.HTTPS = rec
-	}
+	sort.Slice(report.Results, func(i, j int) bool {
+		return report.Results[i].Module < report.Results[j].Module
+	})
 
 	return report
 }

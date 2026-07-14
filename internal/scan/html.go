@@ -92,6 +92,9 @@ const pageTemplate = `<!doctype html>
   #panel .kv .k { color: #6e7681; }
   #panel .kv .v { color: #c9d1d9; word-break: break-all; }
   #panel .err { color: #f85149; word-break: break-all; }
+  #panel pre.out { margin: 6px 0 0; padding: 10px; background: #0d1117;
+    border: 1px solid #21262d; border-radius: 6px; overflow-x: auto;
+    white-space: pre-wrap; word-break: break-word; color: #c9d1d9; font-size: 12px; }
   #panel .badge { display: inline-block; padding: 1px 8px; border-radius: 999px;
     font-size: 11px; margin-top: 6px; }
   #panel .up { background: #12351d; color: #3fb950; }
@@ -110,12 +113,12 @@ const pageTemplate = `<!doctype html>
     <header><b>GoScouter</b> scan <small id="tgt"></small></header>
     <div id="legend">
       <span><i style="background:#3fb950"></i>reachable</span>
-      <span><i style="background:#6e7681"></i>no HTTP response</span>
+      <span><i style="background:#6e7681"></i>no response</span>
     </div>
   </div>
   <aside id="panel">
     <h1 id="pTitle">Select a node</h1>
-    <div class="hint">Click any host in the graph to inspect its DNS and HTTP records. Drag to reposition; scroll the canvas to explore.</div>
+    <div class="hint">Click any host in the graph to inspect every module's output for it. Drag to reposition; scroll the canvas to explore.</div>
     <div id="pBody"></div>
   </aside>
 </div>
@@ -224,40 +227,23 @@ window.addEventListener('mouseup', () => { drag = null; });
 
 function esc(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-function dnsBlock(d) {
-  if (!d) return '';
-  const rows = [];
-  const add = (k, v) => { if (v && v.length) rows.push(['k', k], ['v', Array.isArray(v) ? v.join(', ') : v]); };
-  add('A', d.A); add('AAAA', d.AAAA); if (d.CNAME) add('CNAME', d.CNAME);
-  add('MX', d.MX); add('NS', d.NS); add('TXT', d.TXT);
-  if (!rows.length) return '<h2>DNS</h2><div class="hint">no records</div>';
-  let out = '<h2>DNS</h2><div class="kv">';
-  for (let i = 0; i < rows.length; i += 2) out += '<div class="'+rows[i][0]+'">'+esc(rows[i][1])+'</div><div class="v">'+esc(rows[i+1][1])+'</div>';
-  return out + '</div>';
-}
-function httpBlock(title, h, err) {
-  let out = '<h2>' + title + '</h2>';
-  if (err) return out + '<div class="err">' + esc(err) + '</div>';
-  if (!h) return out + '<div class="hint">not probed</div>';
-  out += '<div class="kv">';
-  out += '<div class="k">Status</div><div class="v">' + esc(h.Status || '') + '</div>';
-  out += '<div class="k">Proto</div><div class="v">' + esc(h.Proto || '') + '</div>';
-  if (h.FinalURL && h.FinalURL !== h.RequestURL) out += '<div class="k">Redirect</div><div class="v">' + esc(h.FinalURL) + '</div>';
-  const hd = h.Headers || {};
-  for (const k of Object.keys(hd).sort()) out += '<div class="k">' + esc(k) + '</div><div class="v">' + esc(hd[k].join(', ')) + '</div>';
-  return out + '</div>';
+function moduleBlock(m) {
+  let out = '<h2>' + esc(m.module) + '</h2>';
+  if (m.err) return out + '<div class="err">' + esc(m.err) + '</div>';
+  const text = (m.output || '').replace(/\r/g, '').replace(/^\n+|\n+$/g, '');
+  if (!text) return out + '<div class="hint">no output</div>';
+  return out + '<pre class="out">' + esc(text) + '</pre>';
 }
 
 function select(n) {
   sel = n;
   const r = n.report;
   document.getElementById('pTitle').textContent = r.host;
-  const badge = n.reachable ? '<span class="badge up">reachable</span>' : '<span class="badge down">no HTTP response</span>';
+  const badge = n.reachable ? '<span class="badge up">reachable</span>' : '<span class="badge down">no response</span>';
   let html = badge;
-  html += dnsBlock(r.dns);
-  if (r.dnsErr) html += '<div class="err">DNS: ' + esc(r.dnsErr) + '</div>';
-  html += httpBlock('HTTP', r.http, r.httpErr);
-  html += httpBlock('HTTPS', r.https, r.httpsErr);
+  const results = r.results || [];
+  if (!results.length) html += '<div class="hint">no module output</div>';
+  for (const m of results) html += moduleBlock(m);
   document.getElementById('pBody').innerHTML = html;
 }
 if (root) select(root);

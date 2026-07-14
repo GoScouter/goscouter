@@ -17,7 +17,7 @@ func NewManager() *Manager {
 	m.Add(&RecordsModule{})
 	m.Add(&SubdomainsModule{})
     m.Add(&HttpModule{})
-    m.Add(&ScanModule{})
+    m.Add(&ScanModule{Manager: m})
     return m
 }
 

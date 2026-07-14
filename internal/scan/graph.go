@@ -1,20 +1,23 @@
 package scan
 
-import "goscouter/pkg/records"
+type ModuleResult struct {
+	Module string `json:"module"`
+	Output string `json:"output,omitempty"`
+	Err    string `json:"err,omitempty"`
+}
 
 type HostReport struct {
-	Host  string               `json:"host"`
-	DNS   *records.DNSRecords  `json:"dns,omitempty"`
-	HTTP  *records.HTTPRecords `json:"http,omitempty"`
-	HTTPS *records.HTTPRecords `json:"https,omitempty"`
-
-	DNSErr   string `json:"dnsErr,omitempty"`
-	HTTPErr  string `json:"httpErr,omitempty"`
-	HTTPSErr string `json:"httpsErr,omitempty"`
+	Host    string         `json:"host"`
+	Results []ModuleResult `json:"results,omitempty"`
 }
 
 func (r HostReport) Reachable() bool {
-	return r.HTTP != nil || r.HTTPS != nil
+	for _, m := range r.Results {
+		if m.Err == "" && m.Output != "" {
+			return true
+		}
+	}
+	return false
 }
 
 type Node struct {
