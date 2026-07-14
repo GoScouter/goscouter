@@ -1,4 +1,5 @@
 # Local
+*.html
 gs
 dist/
 coverage.out
