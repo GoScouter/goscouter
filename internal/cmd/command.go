@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 
 	"goscouter/internal/logger"
@@ -54,11 +52,8 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
     logger.Log.Info("Loading built-in commands")
     cm.Add(&ExitCommand{})
     cm.Add(&ClearCommand{})
-    cm.Add(&InstallCommand{})
-
-    cm.Add(&HelpCommand{
-        Commands: slices.Collect(maps.Values(cm.Commands)),
-    })
+    cm.Add(&InstallCommand{Manager: cm, Target: target})
+    cm.Add(&HelpCommand{Manager: cm})
 
     logger.Log.Info("Loaded built-in commands.")
     for k := range cm.Commands {

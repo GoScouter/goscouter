@@ -75,7 +75,7 @@ func TestDownloadToSuccess(t *testing.T) {
 
 	dir := t.TempDir()
 	out := captureStdout(t, func() {
-		if err := downloadTo(manifest, dir); err != nil {
+		if _, err := downloadTo(manifest, dir); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -112,7 +112,7 @@ func TestDownloadToCreatesMissingDir(t *testing.T) {
 
 	dir := filepath.Join(t.TempDir(), "nested", "gs")
 	_ = captureStdout(t, func() {
-		if err := downloadTo(manifest, dir); err != nil {
+		if _, err := downloadTo(manifest, dir); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -132,7 +132,7 @@ func TestDownloadToChecksumMismatch(t *testing.T) {
 	manifest.Platforms[runtime.GOOS] = p
 
 	dir := t.TempDir()
-	err := downloadTo(manifest, dir)
+	_, err := downloadTo(manifest, dir)
 	if err == nil {
 		t.Fatal("expected checksum mismatch error, got nil")
 	}
@@ -155,7 +155,7 @@ func TestDownloadToAlreadyInstalled(t *testing.T) {
 		t.Fatalf("seeding existing module: %v", err)
 	}
 
-	err := downloadTo(manifest, dir)
+	_, err := downloadTo(manifest, dir)
 	if err == nil {
 		t.Fatal("expected error for already-installed module, got nil")
 	}
@@ -179,7 +179,7 @@ func TestDownloadToUnsupportedPlatform(t *testing.T) {
 		Platforms: map[string]module.Platform{"nonexistent-os": {}},
 	}
 
-	err := downloadTo(manifest, t.TempDir())
+	_, err := downloadTo(manifest, t.TempDir())
 	if err == nil {
 		t.Fatal("expected error for unsupported platform, got nil")
 	}
@@ -192,7 +192,7 @@ func TestDownloadToNotFound(t *testing.T) {
 	manifest, closeSrv := serveBinary(t, nil, http.StatusNotFound)
 	defer closeSrv()
 
-	err := downloadTo(manifest, t.TempDir())
+	_, err := downloadTo(manifest, t.TempDir())
 	if err == nil {
 		t.Fatal("expected error for missing binary, got nil")
 	}

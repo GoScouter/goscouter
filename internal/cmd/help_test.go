@@ -16,12 +16,12 @@ func TestHelpCommandMetadata(t *testing.T) {
 }
 
 func TestHelpCommandExecListsCommands(t *testing.T) {
-	c := &HelpCommand{
-		Commands: []Command{
-			&stubCommand{name: "alpha", description: "first"},
-			&stubCommand{name: "beta", description: "second"},
-		},
-	}
+	m := &Manager{Commands: make(map[string]Command)}
+	m.Add(&stubCommand{name: "alpha", description: "first"})
+	m.Add(&stubCommand{name: "beta", description: "second"})
+
+	c := &HelpCommand{Manager: m}
+	m.Add(c)
 
 	out := captureStdout(t, func() {
 		if err := c.Exec(nil); err != nil {

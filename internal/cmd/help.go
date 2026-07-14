@@ -5,7 +5,7 @@ import (
 )
 
 type HelpCommand struct {
-    Commands []Command
+    Manager *Manager
 }
 
 func (cmd *HelpCommand) Name() string {
@@ -18,9 +18,10 @@ func (cmd *HelpCommand) Description() string {
 
 func (cmd *HelpCommand) Exec(args []string) error {
     msg := "List of avaiable built-in commands:\r\n"
-    msg += fmt.Sprintf("[*] %s - %s\r\n", cmd.Name(), cmd.Description())
-    for _, command := range cmd.Commands {
-        msg += fmt.Sprintf("[*] %s - %s\r\n", command.Name(), command.Description())
+    if cmd.Manager != nil {
+        for _, command := range cmd.Manager.Commands {
+            msg += fmt.Sprintf("[*] %s - %s\r\n", command.Name(), command.Description())
+        }
     }
 
     msg += "\r\nList of available flags:\r\n"

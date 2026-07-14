@@ -16,7 +16,10 @@ import (
 	"goscouter/internal/module"
 )
 
-type InstallCommand struct{}
+type InstallCommand struct {
+	Manager *Manager
+	Target  string
+}
 
 func (cmd *InstallCommand) Name() string {
 	return "install"
@@ -46,7 +49,12 @@ func (cmd *InstallCommand) Exec(args []string) error {
 			return err
 		}
 
-		return download(manifest)
+		binaryPath, err := download(manifest)
+		if err != nil {
+			return err
+		}
+
+		return cmd.register(binaryPath)
 	}
 
 	fmt.Printf("Resolving module %s\r\n", ref.ToString())
@@ -70,47 +78,69 @@ func (cmd *InstallCommand) Exec(args []string) error {
 		return fmt.Errorf("module version mismatch (%s != %s)", ref.Version, manifest.Version)
 	}
 
-	return download(manifest)
-}
-
-func download(manifest module.Manifest) error {
-	cacheDir, err := os.UserCacheDir()
+	binaryPath, err := download(manifest)
 	if err != nil {
 		return err
+	}
+
+	return cmd.register(binaryPath)
+}
+
+func (cmd *InstallCommand) register(binaryPath string) error {
+	if cmd.Manager == nil {
+		return nil
+	}
+
+	name := commandName(binaryPath)
+	cmd.Manager.Add(&ExternalCommand{
+		Target:     cmd.Target,
+		ModuleName: name,
+		Module:     binaryPath,
+	})
+
+	fmt.Printf("Command %q is now available\r\n", name)
+	logger.Log.Info(fmt.Sprintf("Registered external command %q from %s", name, binaryPath))
+	return nil
+}
+
+func download(manifest module.Manifest) (string, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
 	}
 
 	return downloadTo(manifest, filepath.Join(cacheDir, "gs"))
 }
 
-func downloadTo(manifest module.Manifest, dir string) error {
+func downloadTo(manifest module.Manifest, dir string) (string, error) {
 	fmt.Printf("Installing %s@%s\r\n", manifest.Name, manifest.Version)
 	logger.Log.Info(fmt.Sprintf("Resolving platform %q for module %s", runtime.GOOS, manifest.Name))
 
 	platform, ok := manifest.Platforms[runtime.GOOS]
 	if !ok {
-		return fmt.Errorf("cannot find binary matching your platform (%s)", runtime.GOOS)
+		return "", fmt.Errorf("cannot find binary matching your platform (%s)", runtime.GOOS)
 	}
 
 	u, err := url.Parse(platform.Binary)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	name := path.Base(u.Path)
 	if name == "" || name == "." || name == "/" {
-		return fmt.Errorf("could not determine a binary name from %q", platform.Binary)
+		return "", fmt.Errorf("could not determine a binary name from %q", platform.Binary)
 	}
 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return "", err
 	}
 
 	binaryPath := filepath.Join(dir, name)
 
 	if _, err := os.Stat(binaryPath); err == nil {
-		return fmt.Errorf("module %q is already installed at %s", name, binaryPath)
+		return "", fmt.Errorf("module %q is already installed at %s", name, binaryPath)
 	} else if !os.IsNotExist(err) {
-		return err
+		return "", err
 	}
 
 	fmt.Printf("Downloading %s\r\n", platform.Binary)
@@ -118,17 +148,17 @@ func downloadTo(manifest module.Manifest, dir string) error {
 
 	resp, err := http.Get(platform.Binary)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("no binary was found (HTTP %d)", resp.StatusCode)
+		return "", fmt.Errorf("no binary was found (HTTP %d)", resp.StatusCode)
 	}
 
 	f, err := os.OpenFile(binaryPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 
@@ -138,13 +168,13 @@ func downloadTo(manifest module.Manifest, dir string) error {
 	written, err := io.Copy(writer, resp.Body)
 	if err != nil {
 		_ = os.Remove(binaryPath)
-		return err
+		return "", err
 	}
 
 	checksum := hex.EncodeToString(hasher.Sum(nil))
 	if checksum != platform.Checksum {
 		_ = os.Remove(binaryPath)
-		return fmt.Errorf(
+		return "", fmt.Errorf(
 			"checksum mismatch: expected %s, got %s",
 			platform.Checksum,
 			checksum,
@@ -154,10 +184,10 @@ func downloadTo(manifest module.Manifest, dir string) error {
 	logger.Log.Info(fmt.Sprintf("Verified checksum %s (%d bytes)", checksum, written))
 	if err := f.Chmod(0o755); err != nil {
 		_ = os.Remove(binaryPath)
-		return fmt.Errorf("failed to make binary executable: %w", err)
+		return "", fmt.Errorf("failed to make binary executable: %w", err)
 	}
 
 	fmt.Printf("Installed %s (%d bytes) to %s\r\n", manifest.Name, written, binaryPath)
 	logger.Log.Info(fmt.Sprintf("Installed module %s to %s", manifest.Name, binaryPath))
-	return nil
+	return binaryPath, nil
 }
