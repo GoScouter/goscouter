@@ -72,19 +72,21 @@ func DownloadTo(manifest Manifest, dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
 
 	hasher := sha256.New()
 	writer := io.MultiWriter(f, hasher)
 
 	written, err := io.Copy(writer, resp.Body)
 	if err != nil {
+		// Windows cannot remove a file while a handle is open, so close first.
+		f.Close()
 		_ = os.Remove(binaryPath)
 		return "", err
 	}
 
 	checksum := hex.EncodeToString(hasher.Sum(nil))
 	if checksum != platform.Checksum {
+		f.Close()
 		_ = os.Remove(binaryPath)
 		return "", fmt.Errorf(
 			"checksum mismatch: expected %s, got %s",
@@ -95,8 +97,14 @@ func DownloadTo(manifest Manifest, dir string) (string, error) {
 
 	logger.Log.Info(fmt.Sprintf("Verified checksum %s (%d bytes)", checksum, written))
 	if err := f.Chmod(0o755); err != nil {
+		f.Close()
 		_ = os.Remove(binaryPath)
 		return "", fmt.Errorf("failed to make binary executable: %w", err)
+	}
+
+	if err := f.Close(); err != nil {
+		_ = os.Remove(binaryPath)
+		return "", err
 	}
 
 	fmt.Printf("Installed %s (%d bytes) to %s\r\n", manifest.Name, written, binaryPath)

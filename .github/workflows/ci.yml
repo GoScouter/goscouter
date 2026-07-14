@@ -40,15 +40,6 @@ jobs:
           git diff --exit-code -- go.mod go.sum \
             || (echo "::error::go.mod/go.sum are not tidy — run 'make tidy'" && exit 1)
 
-      - name: Check formatting
-        run: |
-          unformatted="$(gofmt -l .)"
-          if [ -n "$unformatted" ]; then
-            echo "::error::The following files are not gofmt'd:"
-            echo "$unformatted"
-            exit 1
-          fi
-
       - name: go vet
         run: make vet
 

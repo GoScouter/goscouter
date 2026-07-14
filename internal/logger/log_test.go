@@ -9,7 +9,9 @@ import (
 )
 
 func TestLogPath(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // os.UserHomeDir uses USERPROFILE on Windows
 
 	got, err := LogPath()
 	if err != nil {
@@ -31,6 +33,7 @@ func TestLogPath(t *testing.T) {
 func TestSetupLogger(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // os.UserHomeDir uses USERPROFILE on Windows
 
 	if err := SetupLogger(LoggerConfig{Console: false, Level: slog.LevelInfo}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
