@@ -6,13 +6,13 @@ import (
 )
 
 type stubCommand struct {
-	name    string
+	name        string
 	description string
-    execErr error
+	execErr     error
 }
 
 func (c *stubCommand) Name() string             { return c.name }
-func (c *stubCommand) Description() string             { return c.description }
+func (c *stubCommand) Description() string      { return c.description }
 func (c *stubCommand) Exec(args []string) error { return c.execErr }
 
 func TestNewCommandManagerRegistersExit(t *testing.T) {
@@ -21,7 +21,7 @@ func TestNewCommandManagerRegistersExit(t *testing.T) {
 		t.Fatalf("expected command manager, got error: %v", err)
 	}
 
-    got, err := cm.Get("exit")
+	got, err := cm.Get("exit")
 	if err != nil {
 		t.Fatalf("expected exit command to be registered, got error: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestGetCommandUnknown(t *testing.T) {
 		t.Fatalf("expected command manager, got error: %v", err)
 	}
 
-    if _, err := cm.Get("nope"); err == nil {
+	if _, err := cm.Get("nope"); err == nil {
 		t.Fatal("expected error for unknown command, got nil")
 	}
 }
@@ -47,7 +47,7 @@ func TestAddAndGetCommand(t *testing.T) {
 		t.Fatalf("expected command manager, got error: %v", err)
 	}
 
-    cmd := &stubCommand{name: "hello"}
+	cmd := &stubCommand{name: "hello"}
 	cm.Add(cmd)
 
 	got, err := cm.Get("hello")
@@ -65,7 +65,7 @@ func TestRemoveCommand(t *testing.T) {
 		t.Fatalf("expected command manager, got error: %v", err)
 	}
 
-    cm.Add(&stubCommand{name: "hello"})
+	cm.Add(&stubCommand{name: "hello"})
 	cm.Remove("hello")
 
 	if _, err := cm.Get("hello"); err == nil {

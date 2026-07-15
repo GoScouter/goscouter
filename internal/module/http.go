@@ -33,15 +33,15 @@ func (m *HttpModule) Scout(target string, args []string) (sdk.Result, error) {
 		return nil, err
 	}
 
-    scheme := "HTTP"
-    if *useHTTPS {
+	scheme := "HTTP"
+	if *useHTTPS {
 		target = forceScheme(target, "https")
-        scheme = "HTTPS"
-    } else {
+		scheme = "HTTPS"
+	} else {
 		target = forceScheme(target, "http")
-    }
+	}
 
-    _, err := web.CheckSiteStatus(target)
+	_, err := web.CheckSiteStatus(target)
 	if err != nil {
 		return nil, err
 	}

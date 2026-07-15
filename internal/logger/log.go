@@ -3,8 +3,8 @@ package logger
 import (
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
-    "os"
 )
 
 type LoggerConfig struct {
@@ -44,12 +44,12 @@ func LogPath() (string, error) {
 }
 
 func SetupLogger(cfg LoggerConfig) error {
-    logPath, err := LogPath()
-    if err != nil {
-        return err
-    }
+	logPath, err := LogPath()
+	if err != nil {
+		return err
+	}
 
-    file, err := os.OpenFile(
+	file, err := os.OpenFile(
 		logPath,
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
 		0644,
@@ -69,8 +69,8 @@ func SetupLogger(cfg LoggerConfig) error {
 	}
 
 	handler := slog.NewTextHandler(writer, opts)
-    Log = slog.New(handler)
-    logFile = file
+	Log = slog.New(handler)
+	logFile = file
 
-    return nil
+	return nil
 }

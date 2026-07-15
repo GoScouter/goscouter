@@ -1,22 +1,22 @@
 package cmd
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk"
 )
 
 type ModuleCommand struct {
-    Target string
-    Module sdk.Module
+	Target string
+	Module sdk.Module
 }
 
 func (cmd *ModuleCommand) Name() string {
-    return cmd.Module.Name()
+	return cmd.Module.Name()
 }
 
 func (cmd *ModuleCommand) Description() string {
-    return cmd.Module.Description()
+	return cmd.Module.Description()
 }
 
 func (cmd *ModuleCommand) Exec(args []string) error {

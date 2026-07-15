@@ -1,23 +1,22 @@
 package cmd
 
 import (
-    "fmt"
+	"fmt"
 )
 
-type ClearCommand struct {}
+type ClearCommand struct{}
 
 func (cmd *ClearCommand) Name() string {
-    return "clear"
+	return "clear"
 }
 
 func (cmd *ClearCommand) Description() string {
-    return "Clear's current buffer"
+	return "Clear's current buffer"
 }
 
 const clear = "\033[2J\033[H"
 
 func (cmd *ClearCommand) Exec(args []string) error {
-    fmt.Print(clear)
-    return nil
+	fmt.Print(clear)
+	return nil
 }
-

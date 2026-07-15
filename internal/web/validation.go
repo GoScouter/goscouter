@@ -25,9 +25,9 @@ func CheckSiteStatus(siteURL string) (int, error) {
 			return 0, fmt.Errorf("site check timed out after %s", TIMEOUT)
 		}
 
-        return 0, err
+		return 0, err
 	}
 
-    defer resp.Body.Close()
+	defer resp.Body.Close()
 	return resp.StatusCode, nil
 }

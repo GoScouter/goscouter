@@ -18,21 +18,22 @@ func externalDir() (string, error) {
 	return filepath.Join(cacheDir, "gs"), nil
 }
 
-func LoadExternal() ([]sdk.Module, error) {
+func LoadExternal() ([]sdk.Module, func(), error) {
 	dir, err := externalDir()
 	if err != nil {
-		return nil, err
+		return nil, noopCleanup, err
 	}
 
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, noopCleanup, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, noopCleanup, err
 	}
 
 	var mods []sdk.Module
+	var bins []*sdk.Binary
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
@@ -45,7 +46,15 @@ func LoadExternal() ([]sdk.Module, error) {
 			continue
 		}
 		mods = append(mods, bin)
+		bins = append(bins, bin)
 	}
 
-	return mods, nil
+	cleanup := func() {
+		for _, b := range bins {
+			_ = b.Close()
+		}
+	}
+	return mods, cleanup, nil
 }
+
+func noopCleanup() {}

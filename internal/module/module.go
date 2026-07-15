@@ -9,16 +9,16 @@ import (
 )
 
 type Manager struct {
-    Modules map[string]sdk.Module
+	Modules map[string]sdk.Module
 }
 
 func NewManager() *Manager {
 	m := &Manager{Modules: make(map[string]sdk.Module)}
 	m.Add(&RecordsModule{})
 	m.Add(&SubdomainsModule{})
-    m.Add(&HttpModule{})
-    m.Add(&ScanModule{Manager: m})
-    return m
+	m.Add(&HttpModule{})
+	m.Add(&ScanModule{Manager: m})
+	return m
 }
 
 func (m *Manager) Add(mod sdk.Module) {
@@ -34,6 +34,6 @@ func (m *Manager) Get(name string) (sdk.Module, error) {
 	return mod, nil
 }
 
-func (m *Manager) GetAll() ([]sdk.Module) {
-    return slices.Collect(maps.Values(m.Modules))
+func (m *Manager) GetAll() []sdk.Module {
+	return slices.Collect(maps.Values(m.Modules))
 }

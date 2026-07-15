@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-    "goscouter/pkg/records"
+	"goscouter/pkg/records"
 )
 
 func FetchHTTPRecords(siteURL, scheme string) (*records.HTTPRecords, error) {
@@ -29,12 +29,12 @@ func FetchHTTPRecords(siteURL, scheme string) (*records.HTTPRecords, error) {
 	defer resp.Body.Close()
 
 	return &records.HTTPRecords{
-        Scheme:     scheme,
+		Scheme:     scheme,
 		RequestURL: siteURL,
 		FinalURL:   resp.Request.URL.String(),
 		StatusCode: resp.StatusCode,
 		Status:     resp.Status,
 		Proto:      resp.Proto,
 		Headers:    resp.Header,
-    }, nil
+	}, nil
 }

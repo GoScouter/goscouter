@@ -3,6 +3,7 @@ package module
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"fmt"
 
 	"goscouter/internal/logger"
 )

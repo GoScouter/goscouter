@@ -20,7 +20,7 @@ func (m *RecordsModule) Description() string {
 }
 
 func (m *RecordsModule) Version() string {
-    return "0.0.1"
+	return "0.0.1"
 }
 
 func (m *RecordsModule) Scout(target string, _ []string) (sdk.Result, error) {
@@ -30,9 +30,9 @@ func (m *RecordsModule) Scout(target string, _ []string) (sdk.Result, error) {
 	}
 
 	records, err := dns.Lookup(parsed.Path)
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	return records, nil
 }

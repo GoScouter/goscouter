@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-    "goscouter/pkg/records"
+	"goscouter/pkg/records"
 )
 
 const TIMEOUT time.Duration = 5 * time.Second

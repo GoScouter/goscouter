@@ -23,7 +23,7 @@ var scanExcluded = map[string]bool{
 	"scan":       true,
 }
 
-func (m *ScanModule) modulesForScan() []sdk.Module {
+func (m *ScanModule) modulesForScan() ([]sdk.Module, func()) {
 	var mods []sdk.Module
 
 	if m.Manager != nil {
@@ -34,7 +34,7 @@ func (m *ScanModule) modulesForScan() []sdk.Module {
 		}
 	}
 
-	external, err := LoadExternal()
+	external, cleanup, err := LoadExternal()
 	if err != nil {
 		logger.Log.Warn(fmt.Sprintf("scan: loading external modules: %v", err))
 	}
@@ -44,7 +44,7 @@ func (m *ScanModule) modulesForScan() []sdk.Module {
 		}
 	}
 
-	return mods
+	return mods, cleanup
 }
 
 func (m *ScanModule) Name() string {
@@ -83,7 +83,10 @@ func (m *ScanModule) Scout(target string, args []string) (sdk.Result, error) {
 		return nil, err
 	}
 
-	graph, err := scan.Build(context.Background(), target, m.modulesForScan())
+	mods, cleanup := m.modulesForScan()
+	defer cleanup()
+
+	graph, err := scan.Build(context.Background(), target, mods)
 	if err != nil {
 		return nil, err
 	}
