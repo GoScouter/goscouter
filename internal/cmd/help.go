@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+
+	"goscouter/internal/style"
 )
 
 type HelpCommand struct {
@@ -17,16 +21,34 @@ func (cmd *HelpCommand) Description() string {
 }
 
 func (cmd *HelpCommand) Exec(args []string) error {
-	msg := "List of avaiable built-in commands:\r\n"
+	var b strings.Builder
+
+	b.WriteString(style.Bold("Available commands") + "\r\n")
 	if cmd.Manager != nil {
-		for _, command := range cmd.Manager.Commands {
-			msg += fmt.Sprintf("[*] %s - %s\r\n", command.Name(), command.Description())
+		names := make([]string, 0, len(cmd.Manager.Commands))
+		width := 0
+		for name := range cmd.Manager.Commands {
+			names = append(names, name)
+			if len(name) > width {
+				width = len(name)
+			}
+		}
+		sort.Strings(names)
+
+		for _, name := range names {
+			command := cmd.Manager.Commands[name]
+			pad := strings.Repeat(" ", width-len(name))
+			b.WriteString(fmt.Sprintf("  %s%s   %s\r\n",
+				style.Cyan(name), pad, style.Dim(command.Description())))
 		}
 	}
 
-	msg += "\r\nList of available flags:\r\n"
-	msg += "[*] --target -- Determines the site that goscouter will target (requires http/https prefix).\r\n"
+	b.WriteString("\r\n" + style.Bold("Flags") + "\r\n")
+	b.WriteString(fmt.Sprintf("  %s   %s\r\n",
+		style.Cyan("--target"),
+		style.Dim("Determines the site that goscouter will target (requires http/https prefix)."),
+	))
 
-	fmt.Printf("%s\r\n", msg)
+	fmt.Printf("%s\r\n", b.String())
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
+	"goscouter/internal/style"
 )
 
 type UninstallCommand struct {
@@ -45,7 +46,7 @@ func (cmd *UninstallCommand) unregister(name string) error {
 
 	cmd.Manager.Remove(name)
 
-	fmt.Printf("Command %q is no longer available\r\n", name)
+	fmt.Printf("%s\r\n", style.Successf("Command %s is no longer available", style.Bold(name)))
 	logger.Log.Info(fmt.Sprintf("Unregistered external command %q", name))
 	return nil
 }

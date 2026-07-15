@@ -5,6 +5,7 @@ import (
 
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
+	"goscouter/internal/style"
 )
 
 type InstallCommand struct {
@@ -34,7 +35,7 @@ func (cmd *InstallCommand) Exec(args []string) error {
 
 	ref := module.ParseModule(link)
 	if ref == nil {
-		fmt.Printf("Resolving manifest from %s\r\n", link)
+		fmt.Printf("%s\r\n", style.Infof("Resolving manifest from %s", link))
 		manifest, err := module.ResolveManifest(link)
 		if err != nil {
 			return err
@@ -48,7 +49,7 @@ func (cmd *InstallCommand) Exec(args []string) error {
 		return cmd.register(binaryPath)
 	}
 
-	fmt.Printf("Resolving module %s\r\n", ref.ToString())
+	fmt.Printf("%s\r\n", style.Infof("Resolving module %s", ref.ToString()))
 
 	// Make sure to make the registry website to have an api endpoint that doing this.
 	// Needs a domain for that because github pages cannot do this.
@@ -89,7 +90,7 @@ func (cmd *InstallCommand) register(binaryPath string) error {
 		Module:     binaryPath,
 	})
 
-	fmt.Printf("Command %q is now available\r\n", name)
+	fmt.Printf("%s\r\n", style.Successf("Command %s is now available", style.Bold(name)))
 	logger.Log.Info(fmt.Sprintf("Registered external command %q from %s", name, binaryPath))
 	return nil
 }

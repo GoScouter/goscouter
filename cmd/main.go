@@ -16,6 +16,7 @@ import (
 	"goscouter/internal/cmd"
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
+	"goscouter/internal/style"
 	"goscouter/internal/terminal"
 	_ "goscouter/internal/web"
 )
@@ -30,12 +31,7 @@ var BANNER = `
 `
 
 
-const (
-	NAME = "GS"
-
-	PURPLE = "\033[38;2;87;87;232m"
-	RESET = "\033[0m"
-)
+const NAME = "GS"
 
 var (
 	BUILD_TIME string
@@ -63,7 +59,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("Target: %s\n", *targetSite)
+    fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(*targetSite))
     logger.Log.Info("Entering terminal raw mode")
     restore, err := terminal.EnterRawMode()
     if err != nil {
@@ -89,7 +85,7 @@ func main() {
 
     reader := bufio.NewReader(os.Stdin)
     for !interrupted.Load() {
-        fmt.Print("(gs) > ")
+        fmt.Print(style.Prompt())
 
         input, err := terminal.ReadLine(reader, os.Stdout)
         if err != nil {
@@ -105,11 +101,15 @@ func main() {
         }
 
         input = strings.TrimSpace(input)
-        parts := strings.Split(input, " ")
+        if input == "" {
+            // Blank line: just re-prompt instead of reporting an empty command.
+            continue
+        }
+        parts := strings.Fields(input)
 
         command, err := commandManager.Get(parts[0])
 		if err != nil {
-            fmt.Printf("%s\r\n", err)
+            fmt.Printf("%s\r\n", style.Error(err.Error()))
             continue
         }
 
@@ -119,7 +119,7 @@ func main() {
                 break
             }
 
-            fmt.Printf("%s\r\n", err)
+            fmt.Printf("%s\r\n", style.Error(err.Error()))
             continue
         }
    }
@@ -129,9 +129,7 @@ func main() {
 }
 
 func printBanner() {
-	fmt.Print(PURPLE)
-	fmt.Print(BANNER)
-	fmt.Print(RESET)
+	fmt.Print(style.Purple(BANNER))
 	fmt.Println()
 
 	buildTime := BUILD_TIME
@@ -144,5 +142,10 @@ func printBanner() {
 		version = "dev"
 	}
 
-	fmt.Printf("\t\t\t%s %s • %s\n\n", NAME, version, buildTime)
+	fmt.Printf("\t\t\t%s %s %s %s\n\n",
+		style.Bold(NAME),
+		style.Cyan(version),
+		style.Dim("•"),
+		style.Dim(buildTime),
+	)
 }
