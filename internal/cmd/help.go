@@ -27,7 +27,10 @@ func (cmd *HelpCommand) Exec(args []string) error {
 	if cmd.Manager != nil {
 		names := make([]string, 0, len(cmd.Manager.Commands))
 		width := 0
-		for name := range cmd.Manager.Commands {
+		for name, command := range cmd.Manager.Commands {
+			if _, ok := command.(*ExternalCommand); ok {
+				continue
+			}
 			names = append(names, name)
 			if len(name) > width {
 				width = len(name)
