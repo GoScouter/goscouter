@@ -143,6 +143,8 @@ gs> install https://github.com/GoScouter/some-module
 gs> exit              # leave the shell (or press Ctrl-D)
 ```
 
+![demo](assets/demo.png)
+
 ## Contributing
 
 Contributions are welcome! Whether it's a bug report, a feature request, a new
