@@ -18,7 +18,6 @@ import (
 	"goscouter/internal/module"
 	"goscouter/internal/style"
 	"goscouter/internal/terminal"
-	_ "goscouter/internal/web"
 )
 
 var BANNER = `
@@ -61,7 +60,7 @@ func main() {
 
     fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(*targetSite))
     logger.Log.Info("Entering terminal raw mode")
-    restore, err := terminal.EnterRawMode()
+    state, err := terminal.NewShellState()
     if err != nil {
         panic(err)
     }
@@ -87,7 +86,7 @@ func main() {
     for !interrupted.Load() {
         fmt.Print(style.Prompt())
 
-        input, err := terminal.ReadLine(reader, os.Stdout)
+        input, err := terminal.ReadLine(reader, os.Stdout, state)
         if err != nil {
             if errors.Is(err, terminal.ErrInterrupted) {
                 // Ctrl-C: abandon the current line and prompt again.
@@ -105,6 +104,8 @@ func main() {
             // Blank line: just re-prompt instead of reporting an empty command.
             continue
         }
+
+        state.AddHistory(input)
         parts := strings.Fields(input)
 
         command, err := commandManager.Get(parts[0])
@@ -125,7 +126,7 @@ func main() {
    }
 
     logger.Log.Info("Exiting terminal raw mode, restoring old state")
-    defer restore()
+    defer state.Restore()
 }
 
 func printBanner() {

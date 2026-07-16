@@ -9,9 +9,14 @@ import (
 )
 
 func readLine(input string) (string, string, error) {
+	return readLineWithHistory(input)
+}
+
+func readLineWithHistory(input string, history ...string) (string, string, error) {
 	in := bufio.NewReader(strings.NewReader(input))
 	var out strings.Builder
-	line, err := ReadLine(in, &out)
+	state := &ShellState{CommandHistory: history}
+	line, err := ReadLine(in, &out, state)
 	return line, out.String(), err
 }
 
@@ -91,14 +96,15 @@ func TestReadLineBackspaceOnEmptyLine(t *testing.T) {
 	}
 }
 
-func TestReadLineIgnoresControlChars(t *testing.T) {
-	// A bare tab (0x09) is an unhandled control char and should be dropped.
+func TestReadLineAppendsUnhandledControlChar(t *testing.T) {
+	// A bare tab (0x09) is not handled specially, so the default case echoes
+	// it through into the line verbatim.
 	line, _, err := readLine("a\tb\r")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if line != "ab" {
-		t.Fatalf("expected %q, got %q", "ab", line)
+	if line != "a\tb" {
+		t.Fatalf("expected %q, got %q", "a\tb", line)
 	}
 }
 
@@ -120,5 +126,90 @@ func TestReadLineErrorPropagates(t *testing.T) {
 	}
 	if line != "partial" {
 		t.Fatalf("expected buffered %q returned with error, got %q", "partial", line)
+	}
+}
+
+func TestReadLineUpArrowRecallsHistory(t *testing.T) {
+	// ESC [ A is the up arrow; it should recall the most recent command.
+	line, _, err := readLineWithHistory("\x1b[A\r", "ls", "pwd")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "pwd" {
+		t.Fatalf("expected %q, got %q", "pwd", line)
+	}
+}
+
+func TestReadLineDownArrowMovesForward(t *testing.T) {
+	// Up twice clamps at the newest entry, then Down steps back to the oldest.
+	line, _, err := readLineWithHistory("\x1b[A\x1b[A\x1b[B\r", "ls", "pwd")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "ls" {
+		t.Fatalf("expected %q, got %q", "ls", line)
+	}
+}
+
+func TestReadLineSS3ArrowForm(t *testing.T) {
+	// ESC O A is the application-cursor-keys form of the up arrow.
+	line, _, err := readLineWithHistory("\x1bOA\r", "ls", "pwd")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "pwd" {
+		t.Fatalf("expected %q, got %q", "pwd", line)
+	}
+}
+
+func TestReadLineArrowWithEmptyHistory(t *testing.T) {
+	// With no history, the arrow is a no-op and the line stays empty.
+	line, out, err := readLineWithHistory("\x1b[A\r")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "" {
+		t.Fatalf("expected empty line, got %q", line)
+	}
+	if strings.Contains(out, "pwd") {
+		t.Fatalf("did not expect any recalled command, got %q", out)
+	}
+}
+
+func TestReadLineUpArrowReplacesTypedInput(t *testing.T) {
+	// Typing "abc" then pressing Up erases the typed text and shows history.
+	line, out, err := readLineWithHistory("abc\x1b[A\r", "ls", "pwd")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "pwd" {
+		t.Fatalf("expected %q, got %q", "pwd", line)
+	}
+	// The three typed chars must be erased with "\b \b" before redrawing.
+	if !strings.Contains(out, "\b \b\b \b\b \b") {
+		t.Fatalf("expected typed input to be erased, got %q", out)
+	}
+}
+
+func TestReadLineIgnoresNonArrowEscapeSequence(t *testing.T) {
+	// ESC [ C is the right arrow, which is not handled and should be dropped
+	// without disturbing surrounding input.
+	line, _, err := readLineWithHistory("ab\x1b[Cx\r", "ls", "pwd")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if line != "abx" {
+		t.Fatalf("expected %q, got %q", "abx", line)
+	}
+}
+
+func TestReadLineEscapeAtEOF(t *testing.T) {
+	// A lone ESC with no following bytes surfaces the reader's io.EOF.
+	line, _, err := readLine("\x1b")
+	if !errors.Is(err, io.EOF) {
+		t.Fatalf("expected io.EOF, got %v", err)
+	}
+	if line != "" {
+		t.Fatalf("expected empty line, got %q", line)
 	}
 }
