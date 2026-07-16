@@ -15,50 +15,59 @@ import (
 	"goscouter/internal/logger"
 )
 
-func Download(manifest Manifest) (string, error) {
-	cacheDir, err := os.UserCacheDir()
+func Download(manifest *Manifest, version string) (string, error) {
+    if manifest == nil {
+        return "", fmt.Errorf("module manifest cannot be null")
+    }
+
+    cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
 
-	return DownloadTo(manifest, filepath.Join(cacheDir, "gs"))
+	return DownloadTo(manifest, filepath.Join(cacheDir, "gs"), version)
 }
 
-func DownloadTo(manifest Manifest, dir string) (string, error) {
-	fmt.Printf("Installing %s@%s\r\n", manifest.Name, manifest.Version)
+func DownloadTo(manifest *Manifest, dir, version string) (string, error) {
+    if manifest == nil {
+        return "", fmt.Errorf("module manifest cannot be null")
+    }
+
+    fmt.Printf("Installing %s@%s\r\n", manifest.Name, version)
 	logger.Log.Info(fmt.Sprintf("Resolving platform %q for module %s", runtime.GOOS, manifest.Name))
 
-	platform, ok := manifest.Platforms[runtime.GOOS]
+    key := version + "/" + runtime.GOOS + "-" + runtime.GOARCH
+    release, ok := manifest.Releases[key]
 	if !ok {
-		return "", fmt.Errorf("cannot find binary matching your platform (%s)", runtime.GOOS)
+		return "", fmt.Errorf("cannot find matching release (%s)", key)
 	}
 
-	u, err := url.Parse(platform.Binary)
+	u, err := url.Parse(release.Binary)
 	if err != nil {
 		return "", err
 	}
 
 	name := path.Base(u.Path)
 	if name == "" || name == "." || name == "/" {
-		return "", fmt.Errorf("could not determine a binary name from %q", platform.Binary)
+		return "", fmt.Errorf("could not determine a binary name from %q", release.Binary)
 	}
 
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err = os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 
 	binaryPath := filepath.Join(dir, name)
 
-	if _, err := os.Stat(binaryPath); err == nil {
+	if _, err = os.Stat(binaryPath); err == nil {
 		return "", fmt.Errorf("module %q is already installed at %s", name, binaryPath)
 	} else if !os.IsNotExist(err) {
 		return "", err
 	}
 
-	fmt.Printf("Downloading %s\r\n", platform.Binary)
-	logger.Log.Info(fmt.Sprintf("Downloading binary %q to %s", platform.Binary, binaryPath))
+	fmt.Printf("Downloading %s\r\n", release.Binary)
+	logger.Log.Info(fmt.Sprintf("Downloading binary %q to %s", release.Binary, binaryPath))
 
-	resp, err := http.Get(platform.Binary)
+	resp, err := http.Get(release.Binary)
 	if err != nil {
 		return "", err
 	}
@@ -85,12 +94,12 @@ func DownloadTo(manifest Manifest, dir string) (string, error) {
 	}
 
 	checksum := hex.EncodeToString(hasher.Sum(nil))
-	if checksum != platform.Checksum {
+	if checksum != release.Checksum {
 		f.Close()
 		_ = os.Remove(binaryPath)
 		return "", fmt.Errorf(
 			"checksum mismatch: expected %s, got %s",
-			platform.Checksum,
+			release.Checksum,
 			checksum,
 		)
 	}

@@ -14,12 +14,18 @@ import (
 	"goscouter/internal/module"
 )
 
+const testVersion = "1.0.0"
+
+func releaseKey() string {
+	return testVersion + "/" + runtime.GOOS + "-" + runtime.GOARCH
+}
+
 func checksumOf(b []byte) string {
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
 }
 
-func serveBinary(t *testing.T, payload []byte, status int) (module.Manifest, func()) {
+func serveBinary(t *testing.T, payload []byte, status int) (*module.Manifest, func()) {
 	t.Helper()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,11 +36,10 @@ func serveBinary(t *testing.T, payload []byte, status int) (module.Manifest, fun
 		_, _ = w.Write(payload)
 	}))
 
-	manifest := module.Manifest{
-		Name:    "demo",
-		Version: "1.0.0",
-		Platforms: map[string]module.Platform{
-			runtime.GOOS: {
+	manifest := &module.Manifest{
+		Name: "demo",
+		Releases: map[string]module.Release{
+			releaseKey(): {
 				Checksum: checksumOf(payload),
 				Binary:   srv.URL + "/demo",
 			},
@@ -75,7 +80,7 @@ func TestDownloadToSuccess(t *testing.T) {
 
 	dir := t.TempDir()
 	out := captureStdout(t, func() {
-		if _, err := module.DownloadTo(manifest, dir); err != nil {
+		if _, err := module.DownloadTo(manifest, dir, testVersion); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -112,7 +117,7 @@ func TestDownloadToCreatesMissingDir(t *testing.T) {
 
 	dir := filepath.Join(t.TempDir(), "nested", "gs")
 	_ = captureStdout(t, func() {
-		if _, err := module.DownloadTo(manifest, dir); err != nil {
+		if _, err := module.DownloadTo(manifest, dir, testVersion); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -127,12 +132,12 @@ func TestDownloadToChecksumMismatch(t *testing.T) {
 	manifest, closeSrv := serveBinary(t, payload, http.StatusOK)
 	defer closeSrv()
 
-	p := manifest.Platforms[runtime.GOOS]
-	p.Checksum = "deadbeef"
-	manifest.Platforms[runtime.GOOS] = p
+	r := manifest.Releases[releaseKey()]
+	r.Checksum = "deadbeef"
+	manifest.Releases[releaseKey()] = r
 
 	dir := t.TempDir()
-	_, err := module.DownloadTo(manifest, dir)
+	_, err := module.DownloadTo(manifest, dir, testVersion)
 	if err == nil {
 		t.Fatal("expected checksum mismatch error, got nil")
 	}
@@ -155,7 +160,7 @@ func TestDownloadToAlreadyInstalled(t *testing.T) {
 		t.Fatalf("seeding existing module: %v", err)
 	}
 
-	_, err := module.DownloadTo(manifest, dir)
+	_, err := module.DownloadTo(manifest, dir, testVersion)
 	if err == nil {
 		t.Fatal("expected error for already-installed module, got nil")
 	}
@@ -172,19 +177,25 @@ func TestDownloadToAlreadyInstalled(t *testing.T) {
 	}
 }
 
-func TestDownloadToUnsupportedPlatform(t *testing.T) {
-	manifest := module.Manifest{
-		Name:      "demo",
-		Version:   "1.0.0",
-		Platforms: map[string]module.Platform{"nonexistent-os": {}},
+func TestDownloadToNoMatchingRelease(t *testing.T) {
+	manifest := &module.Manifest{
+		Name:     "demo",
+		Releases: map[string]module.Release{"9.9.9/nonexistent-os-arch": {}},
 	}
 
-	_, err := module.DownloadTo(manifest, t.TempDir())
+	_, err := module.DownloadTo(manifest, t.TempDir(), testVersion)
 	if err == nil {
-		t.Fatal("expected error for unsupported platform, got nil")
+		t.Fatal("expected error for missing release, got nil")
 	}
-	if !strings.Contains(err.Error(), "platform") {
-		t.Fatalf("expected platform error, got %v", err)
+	if !strings.Contains(err.Error(), "release") {
+		t.Fatalf("expected release error, got %v", err)
+	}
+}
+
+func TestDownloadToNilManifest(t *testing.T) {
+	_, err := module.DownloadTo(nil, t.TempDir(), testVersion)
+	if err == nil {
+		t.Fatal("expected error for nil manifest, got nil")
 	}
 }
 
@@ -192,7 +203,7 @@ func TestDownloadToNotFound(t *testing.T) {
 	manifest, closeSrv := serveBinary(t, nil, http.StatusNotFound)
 	defer closeSrv()
 
-	_, err := module.DownloadTo(manifest, t.TempDir())
+	_, err := module.DownloadTo(manifest, t.TempDir(), testVersion)
 	if err == nil {
 		t.Fatal("expected error for missing binary, got nil")
 	}

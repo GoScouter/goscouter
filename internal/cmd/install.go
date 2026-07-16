@@ -26,51 +26,19 @@ func (cmd *InstallCommand) Exec(args []string) error {
 		return fmt.Errorf("usage: install <module-ref>")
 	}
 
-	link := args[0]
-	if link == "" {
+	url := args[0]
+	if url == "" {
 		return fmt.Errorf("usage: install <module-ref>")
 	}
 
-	logger.Log.Info(fmt.Sprintf("Installing module from %q\r\n", link))
-
-	ref := module.ParseModule(link)
-	if ref == nil {
-		fmt.Printf("%s\r\n", style.Infof("Resolving manifest from %s", link))
-		manifest, err := module.ResolveManifest(link)
-		if err != nil {
-			return err
-		}
-
-		binaryPath, err := module.Download(manifest)
-		if err != nil {
-			return err
-		}
-
-		return cmd.register(binaryPath)
-	}
-
-	fmt.Printf("%s\r\n", style.Infof("Resolving module %s", ref.ToString()))
-
-	// Make sure to make the registry website to have an api endpoint that doing this.
-	// Needs a domain for that because github pages cannot do this.
-	const rawBase = "https://raw.githubusercontent.com/GoScouter/registry/main"
-	url := fmt.Sprintf("%s/%s/%s/%s/manifest.json", rawBase, ref.Author, ref.Module, ref.Version)
-
-	logger.Log.Info(fmt.Sprintf("Fetching manifest from %s", url))
-	manifest, err := module.ResolveManifest(url)
+	logger.Log.Info(fmt.Sprintf("Installing module from %q\r\n", url))
+	ref := module.ParseModule(url)
+    manifest, err := module.ResolveManifest(ref)
 	if err != nil {
 		return err
 	}
 
-	if ref.Module != manifest.Name {
-		return fmt.Errorf("module name mismatch (%s != %s)", ref.Module, manifest.Name)
-	}
-
-	if ref.Version != manifest.Version {
-		return fmt.Errorf("module version mismatch (%s != %s)", ref.Version, manifest.Version)
-	}
-
-	binaryPath, err := module.Download(manifest)
+	binaryPath, err := module.Download(manifest, ref.Version)
 	if err != nil {
 		return err
 	}
