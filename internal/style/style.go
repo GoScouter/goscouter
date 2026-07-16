@@ -3,6 +3,7 @@ package style
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
@@ -19,6 +20,7 @@ const (
 	codeCyan   = "\033[38;2;56;193;208m"
 	codeGray   = "\033[38;2;130;130;150m"
 	codePurple = "\033[38;2;87;87;232m"
+	codeWhite  = "\033[38;2;255;255;255m"
 )
 
 var enabled = detect()
@@ -38,6 +40,17 @@ func wrap(code, s string) string {
 }
 
 func Bold(s string) string   { return wrap(codeBold, s) }
+
+// BoldAll makes an already-styled string bold across every color segment.
+// Each color helper ends its span with a reset, which would also clear bold, so
+// bold is re-asserted after each reset instead of just wrapping the whole line.
+func BoldAll(s string) string {
+	if !enabled {
+		return s
+	}
+	return codeBold + strings.ReplaceAll(s, reset, reset+codeBold) + reset
+}
+
 func Dim(s string) string    { return wrap(codeDim, s) }
 func Red(s string) string    { return wrap(codeRed, s) }
 func Green(s string) string  { return wrap(codeGreen, s) }
@@ -45,6 +58,7 @@ func Yellow(s string) string { return wrap(codeYellow, s) }
 func Cyan(s string) string   { return wrap(codeCyan, s) }
 func Gray(s string) string   { return wrap(codeGray, s) }
 func Purple(s string) string { return wrap(codePurple, s) }
+func White(s string) string  { return wrap(codeWhite, s) }
 
 func Prompt() string {
 	return Dim("(") + Bold(Purple("gs")) + Dim(")") + " " + Cyan("❯") + " "

@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"goscouter/internal"
 	"goscouter/internal/cmd"
 	"goscouter/internal/logger"
 	"goscouter/internal/module"
@@ -137,11 +138,13 @@ func printBanner() {
 	if buildTime == "" {
 		buildTime = "unknown"
 	}
+	internal.BuildTime = buildTime
 
 	version := VERSION
 	if version == "" {
 		version = "dev"
 	}
+	internal.Version = version
 
 	fmt.Printf("\t\t\t%s %s %s %s\n\n",
 		style.Bold(NAME),
