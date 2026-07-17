@@ -1,3 +1,5 @@
+<# AI-GENERATED, FULLY APPROVED BY <me@idank.dev>. WE HAVE NO IDEA HOW TO WRITE PS1 SCRIPTS MANUALLY. #>
+
 <#
 .SYNOPSIS
     GoScouter installer for Windows.
