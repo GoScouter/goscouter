@@ -143,7 +143,21 @@ gs> install https://github.com/GoScouter/some-module
 gs> exit              # leave the shell (or press Ctrl-D)
 ```
 
-![demo](assets/demo.png)
+<details>
+<summary>
+CLI interface demo
+</summary>
+
+![demo1](assets/demo.png)
+</details>
+
+<details>
+<summary>
+Scanning demo
+</summary>
+
+![demo2](assets/demo2.png)
+</details>
 
 ## Contributing
 
