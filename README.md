@@ -15,8 +15,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/GoScouter/GoScouter/actions/workflows/build.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/GoScouter/GoScouter/build.yml?branch=main&style=for-the-badge&label=Build" alt="Build">
+  <a href="https://github.com/GoScouter/GoScouter/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/GoScouter/GoScouter/ci.yml?branch=main&style=for-the-badge&label=Build" alt="Build">
   </a>
   <a href="https://github.com/GoScouter/GoScouter/releases">
     <img src="https://img.shields.io/github/v/release/GoScouter/GoScouter?style=for-the-badge" alt="Release">
