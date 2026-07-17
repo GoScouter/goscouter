@@ -41,8 +41,14 @@ var (
 var interrupted atomic.Bool
 
 func main() {
-	targetSite := flag.String("target", "", "The site to target")
-	flag.Parse()
+	version := flag.Bool("version", false, "Returns goscouter cli version")
+    targetSite := flag.String("target", "", "The site to target")
+    flag.Parse()
+
+	if *version {
+        fmt.Println("Version:", VERSION)
+        os.Exit(0)
+	}
 
 	if *targetSite == "" {
 		fmt.Println("Usage: gs --target <example.com>")
@@ -152,7 +158,7 @@ func printBanner() {
 	}
 	internal.Version = version
 
-	fmt.Printf("\t\t\t%s %s %s %s\n\n",
+	fmt.Printf("\t\t%s %s %s %s\n\n",
 		style.Bold(NAME),
 		style.Cyan(version),
 		style.Dim("•"),

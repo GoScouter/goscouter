@@ -52,6 +52,11 @@ func (cmd *HelpCommand) Exec(args []string) error {
 		style.Dim("Determines the site that goscouter will target (requires http/https prefix)."),
 	))
 
-	fmt.Printf("%s\r\n", b.String())
+	b.WriteString(fmt.Sprintf("  %s  %s\r\n",
+		style.Cyan("--version"),
+		style.Dim("Returns goscouter cli version"),
+	))
+
+    fmt.Printf("%s\r\n", b.String())
 	return nil
 }
