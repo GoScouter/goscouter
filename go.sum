@@ -1,5 +1,7 @@
 github.com/GoScouter/sdk v0.0.0-20260712154204-fa4dc6e57c6f h1:JycYKsuyTD8BrAwoZ784Ykxv6Ci/lLPV1GJAi3cS4IM=
 github.com/GoScouter/sdk v0.0.0-20260712154204-fa4dc6e57c6f/go.mod h1:HofZHRCh+FmH/JtWiku5yX3p9A6IagzrvHzclTdUf8o=
+github.com/GoScouter/sdk v0.1.0 h1:2NFlDqEbj7GY/qXz99xCtNID3WsQBbbeJOLzY2p+qwE=
+github.com/GoScouter/sdk v0.1.0/go.mod h1:HofZHRCh+FmH/JtWiku5yX3p9A6IagzrvHzclTdUf8o=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
