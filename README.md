@@ -78,10 +78,61 @@ pipelines, and extend it with your own probes.
 
 ## Installation
 
-> 📦 **Prebuilt releases are coming soon!**
-> Precompiled binaries for macOS, Linux, and Windows will be published on the
-> [Releases](https://github.com/GoScouter/GoScouter/releases) page. Until then,
-> you can build GoScouter from source using the instructions below.
+### Install script
+
+The install script picks the right prebuilt binary for your platform from the
+latest [release](https://github.com/GoScouter/GoScouter/releases), verifies its
+SHA-256 checksum, and installs it.
+
+**Linux and macOS**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.sh | sh
+```
+
+**Windows** (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.ps1 | iex
+```
+
+By default `gs` lands in `/usr/local/bin` when that's writable and `~/.local/bin`
+otherwise; on Windows it goes to `%LOCALAPPDATA%\Programs\GoScouter`, which the
+script adds to your user `PATH`.
+
+Both scripts take the same options:
+
+| Linux / macOS     | Windows             | Environment      | Description                             |
+| ----------------- | ------------------- | ---------------- | --------------------------------------- |
+| `--version <tag>` | `-Version <tag>`    | `GS_VERSION`     | Release tag to install (default: latest) |
+| `--dir <path>`    | `-InstallDir <path>`| `GS_INSTALL_DIR` | Install directory                       |
+| `--no-verify`     | `-NoVerify`         | `GS_NO_VERIFY=1` | Skip the checksum check                 |
+| —                 | `-NoPath`           | —                | Leave `PATH` untouched                  |
+
+A piped script can't take flags, so either use the environment variables:
+
+```bash
+GS_VERSION=v1.2.3 GS_INSTALL_DIR=~/bin \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.sh)"
+```
+
+or download it first and run it with flags:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.sh -o install.sh
+sh install.sh --version v1.2.3 --dir ~/bin
+```
+
+### Manual download
+
+Alternatively, grab the binary for your platform from the
+[Releases](https://github.com/GoScouter/GoScouter/releases) page and put it on
+your `PATH`:
+
+```bash
+chmod +x gs-linux-amd64
+sudo mv gs-linux-amd64 /usr/local/bin/gs
+```
 
 ### Build from source
 
