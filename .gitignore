@@ -1,1 +1,34 @@
+# Local
+*.html
+gs
+dist/
+coverage.out
 
+# macOS
+.DS_Store
+
+# Node / Next.js
+node_modules
+.next
+npm-debug.log*
+pnpm-debug.log*
+frontend/.next
+frontend/node_modules
+
+# Go
+/.gopath
+backend/.gopath
+backend/bin
+backend/obj
+backend/server
+
+# Env / config
+.env
+.env.*
+*.local
+
+# Logs
+*.log
+
+# Docker artifacts
+db_data
