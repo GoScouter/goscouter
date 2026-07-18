@@ -34,9 +34,6 @@ type Manager struct {
 	Target   string
 }
 
-// SetTarget updates the target that all commands scout against. Because
-// commands read the target from the manager at execution time, changing it here
-// takes effect immediately for every registered command.
 func (cm *Manager) SetTarget(target string) {
 	cm.Target = target
 }
