@@ -52,7 +52,7 @@ func (m *ScanModule) Name() string {
 }
 
 func (m *ScanModule) Description() string {
-	return "Crawl the target and its subdomains, then render a spider-web graph of DNS/HTTP findings to an HTML page."
+	return "Crawl the target and its subdomains, then render a spider-web graph of DNS/HTTP findings to an HTML page and a PDF summary."
 }
 
 func (m *ScanModule) Version() string {
@@ -62,6 +62,7 @@ func (m *ScanModule) Version() string {
 type scanResult struct {
 	summary scan.Summary
 	path    string
+	pdfPath string
 }
 
 func (r scanResult) Render() string {
@@ -71,6 +72,7 @@ func (r scanResult) Render() string {
 	fmt.Fprintf(&b, "  Subdomains  : %d discovered\r\n", r.summary.Subdomains)
 	fmt.Fprintf(&b, "  Reachable   : %d\r\n", r.summary.Reachable)
 	fmt.Fprintf(&b, "  Graph       : %s\r\n", r.path)
+	fmt.Fprintf(&b, "  PDF summary : %s\r\n", r.pdfPath)
 	b.WriteString("\r\n")
 	return b.String()
 }
@@ -79,6 +81,7 @@ func (m *ScanModule) Scout(target string, args []string) (sdk.Result, error) {
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	out := fs.String("out", "", "path for the generated HTML graph (default gs-scan-<host>.html)")
+	pdfOut := fs.String("pdf-out", "", "path for the generated PDF summary (default gs-scan-<host>.pdf)")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
@@ -101,5 +104,18 @@ func (m *ScanModule) Scout(target string, args []string) (sdk.Result, error) {
 		return nil, fmt.Errorf("writing graph to %s: %w", path, err)
 	}
 
-	return scanResult{summary: summary, path: path}, nil
+	pdf, _, err := graph.PDF()
+	if err != nil {
+		return nil, fmt.Errorf("generating PDF summary: %w", err)
+	}
+	pdfPath := *pdfOut
+	if pdfPath == "" {
+		pdfPath = fmt.Sprintf("gs-scan-%s.pdf", summary.Target)
+	}
+
+	if err := os.WriteFile(pdfPath, pdf, 0o644); err != nil {
+		return nil, fmt.Errorf("writing PDF summary to %s: %w", pdfPath, err)
+	}
+
+	return scanResult{summary: summary, path: path, pdfPath: pdfPath}, nil
 }
