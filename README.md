@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/GoScouter/assets/refs/heads/main/logo.png"
+  <img src="assets/logo.png"
        width="220"
        alt="GoScouter Logo">
 </p>
