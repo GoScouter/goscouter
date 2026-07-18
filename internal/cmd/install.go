@@ -10,7 +10,6 @@ import (
 
 type InstallCommand struct {
 	Manager *Manager
-	Target  string
 }
 
 func (cmd *InstallCommand) Name() string {
@@ -53,7 +52,7 @@ func (cmd *InstallCommand) register(binaryPath string) error {
 
 	name := commandName(binaryPath)
 	cmd.Manager.Add(&ExternalCommand{
-		Target:     cmd.Target,
+		Manager:    cmd.Manager,
 		ModuleName: name,
 		Module:     binaryPath,
 	})

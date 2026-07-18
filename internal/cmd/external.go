@@ -7,7 +7,7 @@ import (
 )
 
 type ExternalCommand struct {
-	Target     string
+	Manager    *Manager
 	ModuleName string
 	Module     string
 }
@@ -27,7 +27,7 @@ func (cmd *ExternalCommand) Exec(args []string) error {
 	}
 	defer bin.Close()
 
-	res, err := bin.Scout(cmd.Target, args)
+	res, err := bin.Scout(cmd.Manager.Target, args)
 	if err != nil {
 		return err
 	}

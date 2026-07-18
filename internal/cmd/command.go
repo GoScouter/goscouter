@@ -31,6 +31,14 @@ type Command interface {
 
 type Manager struct {
 	Commands map[string]Command
+	Target   string
+}
+
+// SetTarget updates the target that all commands scout against. Because
+// commands read the target from the manager at execution time, changing it here
+// takes effect immediately for every registered command.
+func (cm *Manager) SetTarget(target string) {
+	cm.Target = target
 }
 
 func filePathWalkDir(root string) ([]string, error) {
@@ -47,15 +55,17 @@ func filePathWalkDir(root string) ([]string, error) {
 func NewManager(target string, moduleManager *module.Manager) (*Manager, error) {
 	cm := &Manager{
 		Commands: make(map[string]Command),
+		Target:   target,
 	}
 
 	logger.Log.Info("Loading built-in commands")
 	cm.Add(&InfoCommand{})
     cm.Add(&ExitCommand{})
 	cm.Add(&ClearCommand{})
-	cm.Add(&InstallCommand{Manager: cm, Target: target})
+	cm.Add(&InstallCommand{Manager: cm})
 	cm.Add(&UninstallCommand{Manager: cm})
 	cm.Add(&HelpCommand{Manager: cm})
+	cm.Add(&TargetCommand{Manager: cm})
 
 	logger.Log.Info("Loaded built-in commands.")
 	for k := range cm.Commands {
@@ -77,8 +87,8 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
 		mods := moduleManager.GetAll()
 		for _, mod := range mods {
 			cm.Add(&ModuleCommand{
-				Target: target,
-				Module: mod,
+				Manager: cm,
+				Module:  mod,
 			})
 		}
 	}
@@ -91,7 +101,7 @@ func NewManager(target string, moduleManager *module.Manager) (*Manager, error) 
 
 	for _, ex := range external {
 		cm.Add(&ExternalCommand{
-			Target:     target,
+			Manager:    cm,
 			ModuleName: commandName(ex),
 			Module:     ex,
 		})

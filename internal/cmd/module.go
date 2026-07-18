@@ -7,8 +7,8 @@ import (
 )
 
 type ModuleCommand struct {
-	Target string
-	Module sdk.Module
+	Manager *Manager
+	Module  sdk.Module
 }
 
 func (cmd *ModuleCommand) Name() string {
@@ -20,7 +20,7 @@ func (cmd *ModuleCommand) Description() string {
 }
 
 func (cmd *ModuleCommand) Exec(args []string) error {
-	result, err := cmd.Module.Scout(cmd.Target, args)
+	result, err := cmd.Module.Scout(cmd.Manager.Target, args)
 	if err != nil {
 		return err
 	}
