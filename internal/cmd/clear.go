@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"goscouter/internal"
+	"goscouter/internal/utils"
 )
 
 type ClearCommand struct{}
@@ -18,5 +20,7 @@ const clear = "\033[2J\033[H"
 
 func (cmd *ClearCommand) Exec(args []string) error {
 	fmt.Print(clear)
-	return nil
+	utils.PrintBanner(internal.Version, internal.BuildTime)
+
+    return nil
 }
