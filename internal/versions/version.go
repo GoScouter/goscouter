@@ -187,7 +187,7 @@ func download(ctx context.Context, client *github.Client, release *github.Reposi
 	if got != want {
 		os.Remove(staged)
 		return "", fmt.Errorf(
-			"checksum mismatch for %s\n  expected: %s\n  actual:   %s\nThe download may be corrupt or tampered with — not installing.",
+			"checksum mismatch for %s\n  expected: %s\n  actual:   %s\nThe download may be corrupt or tampered with — not installing",
 			name, want, got,
 		)
 	}

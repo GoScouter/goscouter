@@ -25,12 +25,6 @@ func (m *SubdomainsModule) Version() string {
 	return "0.0.1"
 }
 
-type finderResult struct {
-	source string
-	names  []string
-	err    error
-}
-
 type subdomainResults struct {
 	Subs []pkg.Subdomain
 }
