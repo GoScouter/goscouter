@@ -2,6 +2,7 @@ package scan
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"sort"
 	"strings"
@@ -41,7 +42,9 @@ func hostOf(target string) string {
 func Build(ctx context.Context, target string, mods []sdk.Module) (*Graph, error) {
 	host := hostOf(target)
 
+	fmt.Printf("» scan: discovering subdomains for %s\r\n", host)
 	subs, _ := subdomain.FindAll(ctx, host)
+	fmt.Printf("» scan: found %d subdomains, probing hosts\r\n", len(subs))
 	root := &Node{Report: probeHost(host, mods)}
 
 	sem := make(chan struct{}, maxConcurrentProbes)
@@ -76,6 +79,7 @@ func Build(ctx context.Context, target string, mods []sdk.Module) (*Graph, error
 }
 
 func probeHost(host string, mods []sdk.Module) HostReport {
+	fmt.Printf("» scan: probing %s\r\n", host)
 	report := HostReport{Host: host}
 
 	for _, mod := range mods {

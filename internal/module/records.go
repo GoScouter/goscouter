@@ -24,6 +24,8 @@ func (m *RecordsModule) Version() string {
 }
 
 func (m *RecordsModule) Scout(target string, _ []string) (sdk.Result, error) {
+	fmt.Printf("» dns: looking up %s\r\n", target)
+
 	parsed, err := url.Parse(target)
 	if err != nil {
 		return nil, fmt.Errorf("invalid target %q: %w", target, err)

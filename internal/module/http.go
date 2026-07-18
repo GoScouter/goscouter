@@ -2,6 +2,7 @@ package module
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"net/url"
 	"strings"
@@ -32,6 +33,8 @@ func (m *HttpModule) Scout(target string, args []string) (sdk.Result, error) {
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("» http: probing %s\r\n", target)
 
 	scheme := "HTTP"
 	if *useHTTPS {

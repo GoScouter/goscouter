@@ -2,6 +2,7 @@ package module
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"goscouter/internal/net/subdomain"
@@ -44,6 +45,8 @@ func (r subdomainResults) Render() string {
 }
 
 func (m *SubdomainsModule) Scout(target string, _ []string) (sdk.Result, error) {
+	fmt.Printf("» subdomains: enumerating %s\r\n", target)
+
 	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
 	defer cancel()
 
