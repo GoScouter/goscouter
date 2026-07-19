@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/GoScouter/sdk v0.1.0
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/google/go-github v17.0.0+incompatible
 	golang.org/x/term v0.45.0
 	gopkg.in/src-d/go-git.v4 v4.13.1

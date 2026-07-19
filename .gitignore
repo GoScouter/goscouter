@@ -1,5 +1,6 @@
 # Local
 *.html
+*.pdf
 gs
 dist/
 coverage.out
