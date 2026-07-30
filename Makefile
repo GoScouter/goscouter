@@ -1,4 +1,4 @@
-BINARY  := gs
+BINARY  := bin/gs
 CMD     := ./cmd
 PKG     := main
 VERSION ?= dev

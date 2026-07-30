@@ -8,20 +8,20 @@ import (
 )
 
 type HTTPRecords struct {
-	Scheme     string
-    RequestURL string
-	FinalURL   string
-	StatusCode int
-	Status     string
-	Proto      string
-	Headers    http.Header
+	Scheme     string      `json:"scheme"`
+	RequestURL string      `json:"request_url"`
+	FinalURL   string      `json:"final_url"`
+	StatusCode int         `json:"status_code"`
+	Status     string      `json:"status"`
+	Proto      string      `json:"proto"`
+	Headers    http.Header `json:"headers"`
 }
 
 func (r *HTTPRecords) Render() string {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "\r\n[%s]\r\n", r.Scheme)
-    fmt.Fprintf(&b, "  Status   : %s\r\n", r.Status)
+	fmt.Fprintf(&b, "  Status   : %s\r\n", r.Status)
 	fmt.Fprintf(&b, "  Protocol : %s\r\n", r.Proto)
 	if r.FinalURL != "" && r.FinalURL != r.RequestURL {
 		fmt.Fprintf(&b, "  Redirect : %s -> %s\r\n", r.RequestURL, r.FinalURL)
@@ -33,12 +33,12 @@ func (r *HTTPRecords) Render() string {
 		keys = append(keys, k)
 	}
 
-    sort.Strings(keys)
+	sort.Strings(keys)
 	if len(keys) == 0 {
 		b.WriteString("    (none)\r\n")
 	}
 
-    for _, k := range keys {
+	for _, k := range keys {
 		fmt.Fprintf(&b, "    %s: %s\r\n", k, strings.Join(r.Headers[k], ", "))
 	}
 

@@ -1,9 +1,15 @@
 package cmd
 
-import "testing"
+import (
+	"testing"
+
+	"goscouter/internal/module"
+
+	"github.com/GoScouter/sdk"
+)
 
 func TestTargetCommandMetadata(t *testing.T) {
-	c := &TargetCommand{Manager: &Manager{}}
+	c := &TargetCommand{Manager: &CommandManager{}}
 
 	if c.Name() != "target" {
 		t.Fatalf("expected name %q, got %q", "target", c.Name())
@@ -40,7 +46,7 @@ func TestNewManagerStoresTarget(t *testing.T) {
 }
 
 func TestSetTargetUpdatesManager(t *testing.T) {
-	cm := &Manager{Commands: make(map[string]Command), Target: "old.com"}
+	cm := &CommandManager{Commands: make(map[string]Command), Target: "old.com"}
 
 	cm.SetTarget("new.com")
 
@@ -50,7 +56,7 @@ func TestSetTargetUpdatesManager(t *testing.T) {
 }
 
 func TestTargetCommandSetsTarget(t *testing.T) {
-	cm := &Manager{Commands: make(map[string]Command), Target: "old.com"}
+	cm := &CommandManager{Commands: make(map[string]Command), Target: "old.com"}
 	c := &TargetCommand{Manager: cm}
 
 	out := captureStdout(t, func() {
@@ -68,7 +74,7 @@ func TestTargetCommandSetsTarget(t *testing.T) {
 }
 
 func TestTargetCommandShowsCurrentTarget(t *testing.T) {
-	cm := &Manager{Commands: make(map[string]Command), Target: "example.com"}
+	cm := &CommandManager{Commands: make(map[string]Command), Target: "example.com"}
 	c := &TargetCommand{Manager: cm}
 
 	out := captureStdout(t, func() {
@@ -86,7 +92,7 @@ func TestTargetCommandShowsCurrentTarget(t *testing.T) {
 }
 
 func TestTargetCommandUsageErrors(t *testing.T) {
-	cm := &Manager{Commands: make(map[string]Command), Target: "example.com"}
+	cm := &CommandManager{Commands: make(map[string]Command), Target: "example.com"}
 	c := &TargetCommand{Manager: cm}
 
 	if err := c.Exec([]string{""}); err == nil {
@@ -101,8 +107,10 @@ func TestTargetCommandUsageErrors(t *testing.T) {
 }
 
 func TestSetTargetIsLiveForCommands(t *testing.T) {
-	cm := &Manager{Commands: make(map[string]Command), Target: "old.com"}
-	ext := &ExternalCommand{Manager: cm, ModuleName: "demo", Module: "demo"}
+	cm := &CommandManager{Commands: make(map[string]Command), Target: "old.com"}
+	ext := &ExternalCommand{Manager: cm, External: &module.External{
+		Info: sdk.ModuleInfo{Name: "demo", Author: "demo", Description: "demo"},
+	}}
 
 	cm.SetTarget("new.com")
 

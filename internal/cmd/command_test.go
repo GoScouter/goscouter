@@ -48,7 +48,7 @@ func TestAddAndGetCommand(t *testing.T) {
 	}
 
 	cmd := &stubCommand{name: "hello"}
-	cm.Add(cmd)
+	cm.addCommand(cmd)
 
 	got, err := cm.Get("hello")
 	if err != nil {
@@ -65,8 +65,8 @@ func TestRemoveCommand(t *testing.T) {
 		t.Fatalf("expected command manager, got error: %v", err)
 	}
 
-	cm.Add(&stubCommand{name: "hello"})
-	cm.Remove("hello")
+	cm.addCommand(&stubCommand{name: "hello"})
+	cm.removeCommand("hello")
 
 	if _, err := cm.Get("hello"); err == nil {
 		t.Fatal("expected error after removing command, got nil")

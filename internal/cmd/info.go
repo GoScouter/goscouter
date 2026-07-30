@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"strings"
 
-	"goscouter/internal/style"
 	"goscouter/internal"
+	"goscouter/internal/style"
 )
 
 type InfoCommand struct{}
@@ -113,19 +113,19 @@ func (cmd *InfoCommand) Exec(args []string) error {
 			logoLine = style.BoldAll(logo[i])
 		}
 
-        padding := logoWidth + gap - visibleWidth(logoLine)
+		padding := logoWidth + gap - visibleWidth(logoLine)
 		if padding < 0 {
 			padding = 0
 		}
 
-        b.WriteString(logoLine)
+		b.WriteString(logoLine)
 		b.WriteString(strings.Repeat(" ", padding))
 
 		if i < len(info) {
 			b.WriteString(info[i])
 		}
 
-        b.WriteString("\r\n")
+		b.WriteString("\r\n")
 	}
 	b.WriteString("\r\n")
 

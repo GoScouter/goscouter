@@ -1,37 +1,30 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/GoScouter/sdk"
+	"goscouter/internal/module"
 )
 
 type ExternalCommand struct {
-	Manager    *Manager
-	ModuleName string
-	Module     string
+	Manager  *CommandManager
+	External *module.External
 }
 
 func (cmd *ExternalCommand) Name() string {
-	return cmd.ModuleName
+	return module.Key(module.Namespace(cmd.External.Info))
 }
 
 func (cmd *ExternalCommand) Description() string {
-	return "No need :O"
+	return cmd.External.Info.Description
 }
 
 func (cmd *ExternalCommand) Exec(args []string) error {
-	bin, err := sdk.Open(cmd.Module)
-	if err != nil {
-		return err
-	}
-	defer bin.Close()
-
-	res, err := bin.Scout(cmd.Manager.Target, args)
+	_, view, err := cmd.External.Scout(context.Background(), cmd.Manager.Target, args)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(res.Render())
+	fmt.Println(view)
 	return nil
 }
