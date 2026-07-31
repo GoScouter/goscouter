@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"goscouter/internal/logger"
 	"goscouter/internal/style"
 
 	"github.com/google/go-github/github"
@@ -213,8 +212,8 @@ func install(staged, exe string) error {
 }
 
 func SuggestUpdate(current string) error {
+	// Unversioned builds have nothing to compare against.
 	if current == "" || current == "dev" {
-		logger.Log.Info("Skipping update check for an unversioned build")
 		return nil
 	}
 

@@ -107,3 +107,12 @@ func TestHTTPRecordsRenderNoHeaders(t *testing.T) {
 		t.Errorf("Render() should print (none) when there are no headers\ngot:\n%s", r.Render())
 	}
 }
+
+func TestStatusColorByClass(t *testing.T) {
+	// Styling is off in tests, so this only checks the status survives intact.
+	for _, code := range []int{0, 200, 301, 404, 500} {
+		if got := statusColor(code, "status"); got != "status" {
+			t.Errorf("statusColor(%d) = %q, want the status text unchanged", code, got)
+		}
+	}
+}

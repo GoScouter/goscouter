@@ -3,10 +3,11 @@ package module
 import (
 	"encoding/json"
 	"fmt"
-	"goscouter/internal/dns"
-	"goscouter/pkg/records"
-	"log"
 	"net/url"
+
+	"goscouter/internal/dns"
+	"goscouter/internal/style"
+	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
 )
@@ -44,8 +45,7 @@ func (m *DnsModule) Scout(target string, _ []string) (json.RawMessage, error) {
 func (m *DnsModule) Render(raw json.RawMessage) string {
 	var dns records.DNSRecords
 	if err := json.Unmarshal(raw, &dns); err != nil {
-		log.Print(err.Error())
-		return ""
+		return style.Failuref("dns: unreadable results: %v\r\n", err)
 	}
 
 	return dns.Render()

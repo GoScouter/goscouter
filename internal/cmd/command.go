@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"goscouter/internal/module"
 	"maps"
 	"regexp"
 	"slices"
 	"strings"
 
-	"goscouter/internal/logger"
+	"goscouter/internal/module"
 )
 
 type Command interface {
@@ -32,14 +31,11 @@ func NewManager(target string, manager *module.Manager) (*CommandManager, error)
 		Target:   target,
 	}
 
-	logger.Log.Info("Loading built-in commands")
 	cm.addCommand(&InfoCommand{})
 	cm.addCommand(&ExitCommand{})
 	cm.addCommand(&ClearCommand{})
 	cm.addCommand(&HelpCommand{Manager: cm})
 	cm.addCommand(&TargetCommand{Manager: cm})
-
-	logger.Log.Info("Loaded built-in commands.")
 
 	if manager == nil {
 		return cm, nil

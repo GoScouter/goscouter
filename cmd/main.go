@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,7 +15,6 @@ import (
 
 	"goscouter/internal"
 	"goscouter/internal/cmd"
-	"goscouter/internal/logger"
 	"goscouter/internal/module"
 	"goscouter/internal/style"
 	"goscouter/internal/terminal"
@@ -37,70 +35,61 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("Version:", VERSION)
-		os.Exit(0)
-	}
-
-	if *targetSite == "" {
-		fmt.Println("Usage: gs --target <example.com>")
-		os.Exit(1)
-	}
-
-	printBanner()
-
-	err := logger.SetupLogger(logger.LoggerConfig{
-		Console: false,
-		Level:   slog.LevelInfo,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	if err = versions.SuggestUpdate(VERSION); err != nil {
-		logger.Log.Warn("Update check failed", "error", err)
-		fmt.Printf("%s\n\n", style.Error("Update: "+err.Error()))
+		fmt.Println(versionString())
 		return
 	}
 
-	fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(*targetSite))
-	logger.Log.Info("Entering terminal raw mode")
+	if *targetSite == "" {
+		fmt.Fprintln(os.Stderr, "Usage: gs --target <example.com>")
+		os.Exit(1)
+	}
+
+	if err := run(*targetSite); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\r\n", style.Error(err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(target string) error {
+	printBanner()
+
+	if err := versions.SuggestUpdate(VERSION); err != nil {
+		return fmt.Errorf("update check: %w", err)
+	}
+
+	fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(target))
+
 	state, err := terminal.NewShellState()
 	if err != nil {
-		panic(err)
+		return err
 	}
+	defer state.Restore()
 
-	logger.Log.Info("Loading modules")
 	moduleManager := module.NewManager()
-
-	if err = moduleManager.LoadExternals(context.Background()); err != nil {
-		panic(err)
+	if err := moduleManager.LoadExternals(context.Background()); err != nil {
+		return err
 	}
 
-	logger.Log.Info("Building module dependency graph")
-	graph, err := moduleManager.Build()
-	if err != nil {
-		logger.Log.Warn("Module dependency graph is incomplete", "error", err)
-		fmt.Printf("%s\n", style.Error("Modules: "+err.Error()))
-	}
-	if order, err := graph.Order(); err == nil {
-		logger.Log.Info("Module run order resolved", "order", strings.Join(order, " -> "))
+	// An incomplete graph only disables the modules that depend on what is
+	// missing, so report it and keep going.
+	if _, err := moduleManager.Build(); err != nil {
+		fmt.Printf("%s\r\n", style.Alertf("modules: %v", err))
 	}
 
 	runner, err := module.CreateRunner()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	go func() {
 		if err := runner.Start(context.Background()); err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "%s\r\n", style.Errorf("runner: %v", err))
 		}
 	}()
 
-	logger.Log.Info("Starting command manager")
-	commandManager, err := cmd.NewManager(*targetSite, moduleManager)
+	commandManager, err := cmd.NewManager(target, moduleManager)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	sigChan := make(chan os.Signal, 1)
@@ -155,8 +144,15 @@ func main() {
 		runner.CleanupState()
 	}
 
-	logger.Log.Info("Exiting terminal raw mode, restoring old state")
-	defer state.Restore()
+	return nil
+}
+
+// versionString falls back to "dev" for builds made without the release ldflags.
+func versionString() string {
+	if VERSION == "" {
+		return "dev"
+	}
+	return VERSION
 }
 
 func printBanner() {
@@ -165,12 +161,7 @@ func printBanner() {
 		buildTime = "unknown"
 	}
 	internal.BuildTime = buildTime
-
-	version := VERSION
-	if version == "" {
-		version = "dev"
-	}
-	internal.Version = version
+	internal.Version = versionString()
 
 	utils.PrintBanner(internal.Version, internal.BuildTime)
 }

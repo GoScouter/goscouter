@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"goscouter/internal/logger"
+
 	"goscouter/internal/style"
 )
 
@@ -35,7 +35,6 @@ func (cmd *TargetCommand) Exec(args []string) error {
 
 	cmd.Manager.SetTarget(target)
 
-	logger.Log.Info(fmt.Sprintf("Target set to %q", target))
 	fmt.Printf("%s\r\n", style.Successf("Target set to %s", style.Bold(target)))
 	return nil
 }

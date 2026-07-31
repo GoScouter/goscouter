@@ -1,20 +1,10 @@
 package web
 
 import (
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
-
-	"goscouter/internal/logger"
 )
-
-func TestMain(m *testing.M) {
-	logger.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
-	os.Exit(m.Run())
-}
 
 func TestCheckSiteStatus(t *testing.T) {
 	tests := []struct {

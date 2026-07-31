@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
-	"log"
 	"net/url"
 	"strings"
 
+	"goscouter/internal/style"
 	"goscouter/internal/web"
 	"goscouter/pkg/records"
 
@@ -74,8 +74,7 @@ func (m *HttpModule) Scout(target string, args []string) (json.RawMessage, error
 func (m *HttpModule) Render(raw json.RawMessage) string {
 	var r records.HTTPRecords
 	if err := json.Unmarshal(raw, &r); err != nil {
-		log.Print(err.Error())
-		return ""
+		return style.Failuref("http: unreadable results: %v\r\n", err)
 	}
 
 	return r.Render()

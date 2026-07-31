@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"runtime"
 	"strings"
 
@@ -47,12 +46,6 @@ var logo = []string{
 	style.Yellow("    .-==-    ") + style.Cyan(".--=======---     ") + style.Yellow(".==-"),
 }
 
-var ansiRE = regexp.MustCompile("\x1b\\[[0-9;]*m")
-
-func visibleWidth(s string) int {
-	return len([]rune(ansiRE.ReplaceAllString(s, "")))
-}
-
 func field(key, value string) string {
 	return style.Bold(style.White(key)) + style.Gray(" : ") + value
 }
@@ -65,7 +58,7 @@ func colorSwatch() string {
 
 func infoLines() []string {
 	title := style.Bold(style.Cyan("GoScouter"))
-	rule := style.Gray(strings.Repeat("─", visibleWidth(title)+9))
+	rule := style.Gray(strings.Repeat("─", style.Width(title)+9))
 
 	return []string{
 		title,
@@ -94,7 +87,7 @@ func (cmd *InfoCommand) Exec(args []string) error {
 
 	logoWidth := 0
 	for _, line := range logo {
-		if w := visibleWidth(line); w > logoWidth {
+		if w := style.Width(line); w > logoWidth {
 			logoWidth = w
 		}
 	}
@@ -113,7 +106,7 @@ func (cmd *InfoCommand) Exec(args []string) error {
 			logoLine = style.BoldAll(logo[i])
 		}
 
-		padding := logoWidth + gap - visibleWidth(logoLine)
+		padding := logoWidth + gap - style.Width(logoLine)
 		if padding < 0 {
 			padding = 0
 		}
