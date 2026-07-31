@@ -1,0 +1,102 @@
+name: Feature request
+description: Suggest a new capability or an improvement to an existing one.
+title: '[Feature]: '
+labels: ['type/feature']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Please describe the **problem** before the
+        solution — it's often the case that a different solution fits better,
+        and we can only see that if we understand what you're up against.
+
+        GoScouter is built for authorized security testing, research, and
+        network administration. Requests aimed at unauthorized scanning,
+        evasion, mass targeting, or denial of service will be declined.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched the [existing issues](https://github.com/GoScouter/goscouter/issues?q=is%3Aissue) and this hasn't been requested.
+          required: true
+        - label: I checked the [documentation](https://goscouter.github.io) and this isn't already possible.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do today, and where does GoScouter get in the way?
+      placeholder: |
+        I run gs across a list of hosts from a script. Right now each run needs
+        the interactive shell, so I can't drive it from CI.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should GoScouter do instead? Sketch the flags, commands, or output.
+      placeholder: |
+        A `--exec "<command>"` flag that runs one shell command against the
+        target and exits, so the tool is usable non-interactively.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: What does this touch?
+      description: Pick the closest fit — it doesn't have to be exact.
+      options:
+        - CLI / interactive shell
+        - Module system or protocol
+        - Output and reporting
+        - Configuration
+        - Install / build / release
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: module-check
+    attributes:
+      label: Could this be a module?
+      description: |
+        New probes and analyzers usually belong in their own module repository
+        rather than in the core — see
+        [Writing a module](https://github.com/GoScouter/goscouter/blob/main/CONTRIBUTING.md#writing-a-module).
+      options:
+        - label: I considered this, and it needs to live in the core.
+          required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Other tools, workarounds, or designs you looked at, and why they fell short.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you be willing to implement this?
+      options:
+        - 'Yes, I''d like to open a pull request'
+        - 'Maybe, with some guidance'
+        - 'No, just suggesting it'
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Mockups, prior art, links to how other tools handle it.
+    validations:
+      required: false

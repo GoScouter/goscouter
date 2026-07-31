@@ -1,0 +1,120 @@
+name: Bug report
+description: Report something in GoScouter that doesn't work the way it should.
+title: '[Bug]: '
+labels: ['type/bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill in as much as you can — a bug we can
+        reproduce is a bug we can fix.
+
+        For a **security vulnerability**, don't use this form. Report it
+        privately via
+        [Security Advisories](https://github.com/GoScouter/goscouter/security/advisories/new).
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched the [existing issues](https://github.com/GoScouter/goscouter/issues?q=is%3Aissue) and this hasn't been reported.
+          required: true
+        - label: I'm running the latest [release](https://github.com/GoScouter/goscouter/releases), or can reproduce this on `main`.
+          required: true
+        - label: This is a bug in GoScouter itself, not in a third-party module.
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug, and what you expected instead.
+      placeholder: |
+        `gs> info` prints an empty version string.
+        I expected it to print the release tag the binary was built from.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands you ran, from a clean start.
+      placeholder: |
+        1. gs --target https://example.com
+        2. At the prompt, run `info`
+        3. The version line is blank
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: |
+        Relevant terminal output or error messages. Please redact hostnames,
+        IPs, and anything else you'd rather not publish.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: GoScouter version
+      description: The output of `gs --version`, or the commit SHA if you built from source.
+      placeholder: v1.2.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux (x86_64)
+        - Linux (arm64)
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os-details
+    attributes:
+      label: OS version
+      description: e.g. Ubuntu 24.04, macOS 15.2, Arch (kernel 6.18)
+    validations:
+      required: false
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install it?
+      options:
+        - Install script
+        - Manual download from Releases
+        - Built from source (make build)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      description: Only if you built from source — the output of `go version`.
+      placeholder: go1.26.4 linux/amd64
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Screenshots, a guess at the cause, a workaround you found.
+    validations:
+      required: false

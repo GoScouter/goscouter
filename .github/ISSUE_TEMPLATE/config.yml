@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/GoScouter/goscouter/discussions
+    about: Ask how something works, or float an idea before it becomes a feature request.
+
+  - name: Documentation
+    url: https://goscouter.github.io
+    about: Installation, usage, and the module protocol are documented here.
+
+  - name: Report a security vulnerability
+    url: https://github.com/GoScouter/goscouter/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
+
+  - name: Issue with a module
+    url: https://github.com/GoScouter/goscouter/blob/main/CONTRIBUTING.md#writing-a-module
+    about: Modules live in their own repositories — please file the issue there.
