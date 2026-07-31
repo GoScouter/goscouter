@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"goscouter/internal/module"
 
 	"github.com/GoScouter/sdk"
@@ -24,11 +26,11 @@ func (cmd *InternalCommand) Description() string {
 }
 
 func (cmd *InternalCommand) Exec(args []string) error {
-	_, view, err := module.RunInOrder(cmd.Module.Info(), cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
+	_, views, err := module.RunInOrder(cmd.Module.Info(), cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(view)
+	fmt.Print(strings.Join(views, ""))
 	return nil
 }

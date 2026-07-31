@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"goscouter/internal/module"
 )
 
@@ -26,11 +28,11 @@ func (cmd *ExternalCommand) Exec(args []string) error {
 		return fmt.Errorf("cannot use %s command, socket conn was not found", cmd.Name())
 	}
 
-	_, view, err := module.RunInOrder(cmd.External.Info, cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
+	_, views, err := module.RunInOrder(cmd.External.Info, cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(view)
+	fmt.Print(strings.Join(views, ""))
 	return nil
 }

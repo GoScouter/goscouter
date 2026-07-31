@@ -20,6 +20,7 @@ import (
 
 const infoTimeout = 5 * time.Second
 const scoutTimeout = 4 * time.Minute
+const closeTimeout = 5 * time.Second
 const internalAuthor = "internal"
 
 type External struct {
@@ -43,11 +44,11 @@ func (e *External) Scout(ctx context.Context, target string, args []string) (jso
 	if err != nil {
 		return nil, "", err
 	}
-	defer bin.Close()
+	defer shutdown(bin)
 
 	ctx, cancel := context.WithTimeout(ctx, scoutTimeout)
 	defer cancel()
-	// TODO graph
+
 	return bin.Scout(ctx, target, args)
 }
 
@@ -191,7 +192,7 @@ func open(ctx context.Context, path string) *External {
 		warn(fmt.Sprintf("skipping external module %q: %v", path, err))
 		return nil
 	}
-	defer bin.Close()
+	defer shutdown(bin)
 
 	ctx, cancel := context.WithTimeout(ctx, infoTimeout)
 	defer cancel()
@@ -214,6 +215,22 @@ func open(ctx context.Context, path string) *External {
 	}
 
 	return &External{Path: path, Info: info, Checksum: checksum}
+}
+
+func shutdown(bin *sdk.Binary) {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = bin.Close()
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(closeTimeout):
+		warn(fmt.Sprintf("module %q did not exit within %s, killing it", bin.Path(), closeTimeout))
+		_ = bin.Kill()
+		<-done
+	}
 }
 
 func executable(entry os.DirEntry) bool {
