@@ -86,6 +86,17 @@ func main() {
 		logger.Log.Info("Module run order resolved", "order", strings.Join(order, " -> "))
 	}
 
+	runner, err := module.CreateRunner()
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		if err := runner.Start(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
+
 	logger.Log.Info("Starting command manager")
 	commandManager, err := cmd.NewManager(*targetSite, moduleManager)
 	if err != nil {
@@ -141,6 +152,7 @@ func main() {
 			fmt.Printf("%s\r\n", style.Error(err.Error()))
 			continue
 		}
+		runner.CleanupState()
 	}
 
 	logger.Log.Info("Exiting terminal raw mode, restoring old state")

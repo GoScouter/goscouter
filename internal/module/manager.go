@@ -109,8 +109,16 @@ func (m *Manager) GetInternals() []sdk.Module {
 	return slices.Collect(maps.Values(m.Internal))
 }
 
+func (m *Manager) GetInternal(name string) sdk.Module {
+	return m.Internal[name]
+}
+
 func (m *Manager) GetExternals() []*External {
 	return slices.Collect(maps.Values(m.Externals))
+}
+
+func (m *Manager) GetExternal(name string) *External {
+	return m.Externals[name]
 }
 
 func ExternalDir() (string, error) {

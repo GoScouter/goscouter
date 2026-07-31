@@ -1,14 +1,16 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"goscouter/internal/module"
 )
 
 type ExternalCommand struct {
-	Manager  *CommandManager
-	External *module.External
+	CmdManager    *CommandManager
+	ModuleManager *module.Manager
+	External      *module.External
+
+	Reporter *module.Reporter
 }
 
 func (cmd *ExternalCommand) Name() string {
@@ -20,11 +22,15 @@ func (cmd *ExternalCommand) Description() string {
 }
 
 func (cmd *ExternalCommand) Exec(args []string) error {
-	_, view, err := cmd.External.Scout(context.Background(), cmd.Manager.Target, args)
+	if cmd.Reporter == nil {
+		return fmt.Errorf("cannot use %s command, socket conn was not found", cmd.Name())
+	}
+
+	_, view, err := module.RunInOrder(cmd.External.Info, cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(view)
+	fmt.Print(view)
 	return nil
 }

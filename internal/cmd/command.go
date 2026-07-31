@@ -45,22 +45,32 @@ func NewManager(target string, manager *module.Manager) (*CommandManager, error)
 		return cm, nil
 	}
 
+	reporter, err := module.DialReporter()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, internal := range manager.GetInternals() {
 		cm.addCommand(&InternalCommand{
-			Manager: cm,
-			Module:  internal,
+			CmdManager:    cm,
+			ModuleManager: manager,
+			Module:        internal,
+			Reporter:      reporter,
 		})
 	}
 
 	for _, external := range manager.GetExternals() {
 		cm.addCommand(&ExternalCommand{
-			Manager:  cm,
-			External: external,
+			CmdManager:    cm,
+			ModuleManager: manager,
+			External:      external,
+			Reporter:      reporter,
 		})
 	}
 
 	return cm, nil
 }
+
 func filter[T any](s []T, predicate func(T) bool) []T {
 	result := make([]T, 0, len(s)) // Pre-allocate for efficiency
 	for _, v := range s {

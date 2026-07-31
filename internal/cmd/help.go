@@ -9,7 +9,7 @@ import (
 )
 
 type HelpCommand struct {
-	Manager *Manager
+	Manager *CommandManager
 }
 
 func (cmd *HelpCommand) Name() string {

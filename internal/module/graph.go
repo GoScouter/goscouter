@@ -75,8 +75,5 @@ func (g *Graph) Order() ([]string, error) {
 }
 
 func missing(key string, dep sdk.ModuleNamespace) error {
-	if dep.Source != "" {
-		return fmt.Errorf("%s depends on %s, which is not installed (source: %s)", key, Key(dep), dep.Source)
-	}
 	return fmt.Errorf("%s depends on %s, which is not installed", key, Key(dep))
 }

@@ -8,8 +8,11 @@ import (
 )
 
 type InternalCommand struct {
-	Manager *CommandManager
-	Module  sdk.Module
+	CmdManager    *CommandManager
+	ModuleManager *module.Manager
+	Module        sdk.Module
+
+	Reporter *module.Reporter
 }
 
 func (cmd *InternalCommand) Name() string {
@@ -21,11 +24,11 @@ func (cmd *InternalCommand) Description() string {
 }
 
 func (cmd *InternalCommand) Exec(args []string) error {
-	data, err := cmd.Module.Scout(cmd.Manager.Target, args)
+	_, view, err := module.RunInOrder(cmd.Module.Info(), cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(cmd.Module.Render(data))
+	fmt.Print(view)
 	return nil
 }

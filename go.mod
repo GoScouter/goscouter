@@ -3,7 +3,7 @@ module goscouter
 go 1.26.4
 
 require (
-	github.com/GoScouter/sdk v1.0.6
+	github.com/GoScouter/sdk v1.0.8
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/stevenle/topsort v0.2.0

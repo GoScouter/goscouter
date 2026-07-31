@@ -108,13 +108,13 @@ func TestTargetCommandUsageErrors(t *testing.T) {
 
 func TestSetTargetIsLiveForCommands(t *testing.T) {
 	cm := &CommandManager{Commands: make(map[string]Command), Target: "old.com"}
-	ext := &ExternalCommand{Manager: cm, External: &module.External{
+	ext := &ExternalCommand{CmdManager: cm, External: &module.External{
 		Info: sdk.ModuleInfo{Name: "demo", Author: "demo", Description: "demo"},
 	}}
 
 	cm.SetTarget("new.com")
 
-	if ext.Manager.Target != "new.com" {
-		t.Fatalf("expected external command to see live target %q, got %q", "new.com", ext.Manager.Target)
+	if ext.CmdManager.Target != "new.com" {
+		t.Fatalf("expected external command to see live target %q, got %q", "new.com", ext.CmdManager.Target)
 	}
 }
