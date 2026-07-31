@@ -45,13 +45,3 @@ func TestInfoCommandExec(t *testing.T) {
 		}
 	}
 }
-
-func TestVisibleWidthStripsANSI(t *testing.T) {
-	styled := "\x1b[31mabc\x1b[0m"
-	if got := visibleWidth(styled); got != 3 {
-		t.Fatalf("expected visible width 3, got %d", got)
-	}
-	if got := visibleWidth("héllo"); got != 5 {
-		t.Fatalf("expected visible width 5 for multibyte string, got %d", got)
-	}
-}

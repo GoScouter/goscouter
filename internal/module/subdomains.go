@@ -3,11 +3,9 @@ package module
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
-	"strings"
 
 	"goscouter/internal/net/subdomain"
+	"goscouter/internal/style"
 	pkg "goscouter/pkg/subdomains"
 
 	"github.com/GoScouter/sdk"
@@ -15,18 +13,18 @@ import (
 
 type SubdomainsModule struct{}
 
+var SdModuleInfo = sdk.ModuleInfo{
+	Name:         "subdomains",
+	Author:       internalAuthor,
+	Description:  "Gather the subdomains of the target domain.",
+	Dependencies: make([]sdk.ModuleNamespace, 0),
+}
+
 func (m *SubdomainsModule) Info() sdk.ModuleInfo {
-	return sdk.ModuleInfo{
-		Name:         "subdomains",
-		Author:       internalAuthor,
-		Description:  "Gather the subdomains of the target domain.",
-		Dependencies: make([]sdk.ModuleNamespace, 0),
-	}
+	return SdModuleInfo
 }
 
 func (m *SubdomainsModule) Scout(target string, _ []string) (json.RawMessage, error) {
-	fmt.Printf("» subdomains: enumerating %s\r\n", target)
-
 	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
 	defer cancel()
 
@@ -50,14 +48,8 @@ type subdomainResults struct {
 func (m *SubdomainsModule) Render(raw json.RawMessage) string {
 	var results subdomainResults
 	if err := json.Unmarshal(raw, &results); err != nil {
-		log.Print(err.Error())
-		return ""
+		return style.Failuref("subdomains: unreadable results: %v\r\n", err)
 	}
 
-	var b strings.Builder
-	for _, s := range results.Subs {
-		b.WriteString(s.Render())
-		b.WriteString("\r\n")
-	}
-	return b.String()
+	return pkg.RenderAll(results.Subs)
 }

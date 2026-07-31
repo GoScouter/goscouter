@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"goscouter/internal/utils"
 	"maps"
 	"os"
 	"path/filepath"
@@ -13,7 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"goscouter/internal/logger"
+	"goscouter/internal/style"
+	"goscouter/internal/utils"
 
 	"github.com/GoScouter/sdk"
 )
@@ -248,9 +248,8 @@ func executable(entry os.DirEntry) bool {
 	return info.Mode().Perm()&0o111 != 0
 }
 
+// warn reports a problem the user can act on — a module that could not be
+// loaded, or one that would not shut down — without aborting the session.
 func warn(msg string) {
-	if logger.Log == nil {
-		return
-	}
-	logger.Log.Warn(msg)
+	fmt.Fprintf(os.Stderr, "%s\r\n", style.Alert(msg))
 }

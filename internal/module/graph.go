@@ -27,7 +27,7 @@ func BuildGraph(infos []sdk.ModuleInfo) (*Graph, error) {
 	g := &Graph{sorter: topsort.NewGraph(), known: make(map[string]bool, len(infos))}
 
 	for _, info := range infos {
-		if info.Author == internalAuthor && info.Name == "subdomains" {
+		if info.Author == internalAuthor && info.Name == SdModuleInfo.Name {
 			continue
 		}
 		g.known[Key(Namespace(info))] = true
@@ -36,7 +36,7 @@ func BuildGraph(infos []sdk.ModuleInfo) (*Graph, error) {
 	var problems []error
 
 	for _, info := range infos {
-		if info.Author == internalAuthor && info.Name == "subdomains" {
+		if info.Author == internalAuthor && info.Name == SdModuleInfo.Name {
 			continue
 		}
 
