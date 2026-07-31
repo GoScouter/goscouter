@@ -8,23 +8,6 @@ modules, and core changes are all welcome.
 > scanning easier — evasion, mass targeting, or denial of service — will be
 > declined.
 
-## Why contribute
-
-- **The module surface is a genuinely small entry point.** A useful module is a
-  `Scout` method and a `main`. You don't need to understand the host to write
-  one — read the [SDK docs](https://pkg.go.dev/github.com/GoScouter/sdk) and go.
-- **Your work stays yours.** Modules live in their own repositories and their
-  own release cycles. Nothing has to be merged into the core to be usable.
-- **Idiomatic, tested Go.** Vet, staticcheck, race-enabled tests, and a
-  cross-platform build matrix run on every pull request, so the codebase stays
-  something you'd want to read.
-- **Reviews are real and they're quick.** Pull requests get read by a human, and
-  design discussion is welcome before you write the code.
-- **There's room at every level.** Bug reports, docs, a new module, or a core
-  change — we label
-  [good first issues](https://github.com/GoScouter/goscouter/issues?q=is%3Aissue+is%3Aopen+label%3Acommunity%2Fgood-first-issue)
-  and mean it.
-
 ## Ways to contribute
 
 - **Report a bug** — [open an issue](https://github.com/GoScouter/goscouter/issues/new/choose)
@@ -53,26 +36,6 @@ cd goscouter
 make build      # produces ./bin/gs
 ```
 
-The `Makefile` targets you'll use:
-
-| Target               | What it does                                        |
-| -------------------- | --------------------------------------------------- |
-| `make build`         | Build `./bin/gs`                                    |
-| `make run`           | Build and run without installing                    |
-| `make test`          | Run the test suite with `-race` and coverage        |
-| `make fmt`           | `go fmt ./...`                                      |
-| `make vet`           | `go vet ./...`                                      |
-| `make tidy`          | `go mod tidy`                                       |
-| `make release-build` | Cross-compile into `dist/` for a `GOOS`/`GOARCH`    |
-| `make clean`         | Remove build output and coverage                    |
-
-Run it against a target — note that the target **must** carry an `http://` or
-`https://` prefix:
-
-```bash
-./bin/gs --target https://example.com
-```
-
 ## Making a change
 
 1. **Fork** the repository and create a branch off `main`.
@@ -97,21 +60,7 @@ Run it against a target — note that the target **must** carry an `http://` or
    with table-driven cases. New behavior needs a test; a bug fix needs a test
    that fails without it.
 
-4. **Run the checks CI will run:**
-
-   ```bash
-   make fmt
-   make vet
-   make tidy      # go.mod and go.sum must come back unchanged
-   make test
-   staticcheck ./...
-   ```
-
-   CI runs lint, tests on Linux and macOS, and a cross-compile matrix for
-   `linux/amd64`, `linux/arm64`, `darwin/amd64`, and `darwin/arm64`. All of it
-   must be green before a pull request can merge.
-
-5. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+4. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
 
    ```
    feat: add --timeout flag to module runner
@@ -125,7 +74,7 @@ Run it against a target — note that the target **must** carry an `http://` or
    Keep the subject in the imperative mood and under ~72 characters. Explain
    *why* in the body when the reason isn't obvious from the diff.
 
-6. **Open a pull request** against `main` and fill in the template. Link the
+5. **Open a pull request** against `main` and fill in the template. Link the
    issue it closes (`Closes #123`), and apply the labels that fit — `type/*`
    for what kind of change it is, `area/*` for what it touches (see
    [`.github/labels.json`](.github/labels.json)).
