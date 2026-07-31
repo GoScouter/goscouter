@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gs-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/gs-*
+          path: dist/bin/gs-*
           if-no-files-found: error
 
   release:
@@ -131,7 +131,7 @@ jobs:
           merge-multiple: true
 
       - name: Generate checksums
-        working-directory: dist
+        working-directory: dist/bin
         run: sha256sum gs-* > checksums.txt
 
       - name: Publish release
@@ -141,5 +141,5 @@ jobs:
           name: ${{ github.event.inputs.version }}
           generate_release_notes: true
           files: |
-            dist/gs-*
+            dist/bin/gs-*
             dist/checksums.txt
