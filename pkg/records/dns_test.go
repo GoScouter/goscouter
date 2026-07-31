@@ -54,7 +54,10 @@ func TestDNSRecordsRenderEmpty(t *testing.T) {
 	out := r.Render()
 
 	if !strings.Contains(out, "[DNS]") {
-		t.Errorf("Render() should still contain the [DNS] header, got:\n%s", out)
+		t.Errorf("Render() should still contain the [DNS] heading, got:\n%s", out)
+	}
+	if !strings.Contains(out, "[-] no records found") {
+		t.Errorf("Render() should say so when there is nothing to show, got:\n%s", out)
 	}
 	for _, label := range []string{"  A ", "  AAAA ", "  CNAME ", "  MX ", "  NS ", "  TXT "} {
 		if strings.Contains(out, label) {
@@ -63,19 +66,22 @@ func TestDNSRecordsRenderEmpty(t *testing.T) {
 	}
 }
 
-func TestWriteRecordSetSkipsEmpty(t *testing.T) {
-	var b strings.Builder
-	writeRecordSet(&b, "A", nil)
-	if b.Len() != 0 {
-		t.Errorf("writeRecordSet with empty values wrote %q, want nothing", b.String())
+func TestRecordSetSkipsEmpty(t *testing.T) {
+	if lines := recordSet("A", nil); len(lines) != 0 {
+		t.Errorf("recordSet with empty values returned %q, want nothing", lines)
 	}
 }
 
-func TestWriteRecordSetFormat(t *testing.T) {
-	var b strings.Builder
-	writeRecordSet(&b, "A", []string{"1.2.3.4"})
-	want := "  A      1.2.3.4\r\n"
-	if b.String() != want {
-		t.Errorf("writeRecordSet = %q, want %q", b.String(), want)
+func TestRecordSetFormat(t *testing.T) {
+	lines := recordSet("A", []string{"1.2.3.4", "5.6.7.8"})
+
+	want := []string{"  A      1.2.3.4", "  A      5.6.7.8"}
+	if len(lines) != len(want) {
+		t.Fatalf("recordSet returned %d lines, want %d", len(lines), len(want))
+	}
+	for i := range want {
+		if lines[i] != want[i] {
+			t.Errorf("recordSet line %d = %q, want %q", i, lines[i], want[i])
+		}
 	}
 }

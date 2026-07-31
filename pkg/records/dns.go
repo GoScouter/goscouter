@@ -1,8 +1,7 @@
 package records
 
 import (
-	"fmt"
-	"strings"
+	"goscouter/internal/style"
 )
 
 type DNSRecords struct {
@@ -15,30 +14,44 @@ type DNSRecords struct {
 	TXT   []string `json:"txt"`
 }
 
-func (r *DNSRecords) Render() string {
-	var b strings.Builder
+const dnsLabelWidth = 6
 
-	b.WriteString("\r\n[DNS]\r\n")
-	writeRecordSet(&b, "A", r.A)
-	writeRecordSet(&b, "AAAA", r.AAAA)
-	if r.CNAME != "" {
-		writeRecordSet(&b, "CNAME", []string{r.CNAME})
+func (r *DNSRecords) Render() string {
+	sets := []struct {
+		label  string
+		values []string
+	}{
+		{"A", r.A},
+		{"AAAA", r.AAAA},
+		{"CNAME", nonEmpty(r.CNAME)},
+		{"MX", r.MX},
+		{"NS", r.NS},
+		{"TXT", r.TXT},
 	}
 
-	writeRecordSet(&b, "MX", r.MX)
-	writeRecordSet(&b, "NS", r.NS)
-	writeRecordSet(&b, "TXT", r.TXT)
+	lines := make([]string, 0, len(sets))
+	for _, set := range sets {
+		lines = append(lines, recordSet(set.label, set.values)...)
+	}
 
-	b.WriteString("\r\n")
-	return b.String()
+	if len(lines) == 0 {
+		lines = append(lines, style.Failure("no records found"))
+	}
+
+	return style.Section("DNS", lines...)
 }
 
-func writeRecordSet(b *strings.Builder, label string, values []string) {
-	if len(values) == 0 {
-		return
-	}
-
+func recordSet(label string, values []string) []string {
+	lines := make([]string, 0, len(values))
 	for _, v := range values {
-		fmt.Fprintf(b, "  %-6s %s\r\n", label, v)
+		lines = append(lines, style.Field(label, dnsLabelWidth, style.White(v)))
 	}
+	return lines
+}
+
+func nonEmpty(v string) []string {
+	if v == "" {
+		return nil
+	}
+	return []string{v}
 }

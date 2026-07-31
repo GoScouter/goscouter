@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -93,7 +92,7 @@ func (r *Runner) Start(ctx context.Context) error {
 			if ctx.Err() != nil {
 				return nil
 			}
-			log.Printf("runner: accept: %v", err)
+			warn(fmt.Sprintf("runner: accept: %v", err))
 			continue
 		}
 
@@ -111,13 +110,13 @@ func (r *Runner) handleClient(conn net.Conn) {
 		var req sdk.Request
 		if err := dec.Decode(&req); err != nil {
 			if !errors.Is(err, io.EOF) && !errors.Is(err, net.ErrClosed) {
-				log.Printf("runner: decode request: %v", err)
+				warn(fmt.Sprintf("runner: decode request: %v", err))
 			}
 			return
 		}
 
 		if err := r.handle(enc, &req); err != nil {
-			log.Printf("runner: %q request: %v", req.Type, err)
+			warn(fmt.Sprintf("runner: %q request: %v", req.Type, err))
 		}
 	}
 }
@@ -214,6 +213,20 @@ func (r *Reporter) Report(namespace sdk.ModuleNamespace, data json.RawMessage) e
 }
 
 func RunInOrder(info sdk.ModuleInfo, target string, args []string, manager *Manager, reporter *Reporter) ([]json.RawMessage, []string, error) {
+	if Namespace(info) == Namespace(SdModuleInfo) {
+		sd := manager.GetInternal(Key(Namespace(SdModuleInfo)))
+		data, err := sd.Scout(target, args)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if err := reporter.Report(Namespace(SdModuleInfo), data); err != nil {
+			return nil, nil, err
+		}
+
+		return []json.RawMessage{data}, []string{sd.Render(data)}, nil
+	}
+
 	plan, err := manager.Graph.Plan(Key(Namespace(info)))
 	if err != nil {
 		return nil, nil, err

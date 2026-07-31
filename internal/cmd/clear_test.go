@@ -2,18 +2,10 @@ package cmd
 
 import (
 	"io"
-	"log/slog"
 	"os"
 	"strings"
 	"testing"
-
-	"goscouter/internal/logger"
 )
-
-func TestMain(m *testing.M) {
-	logger.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
-	os.Exit(m.Run())
-}
 
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()

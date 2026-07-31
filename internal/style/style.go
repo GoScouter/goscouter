@@ -3,6 +3,7 @@ package style
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"golang.org/x/term"
@@ -39,7 +40,7 @@ func wrap(code, s string) string {
 	return code + s + reset
 }
 
-func Bold(s string) string   { return wrap(codeBold, s) }
+func Bold(s string) string { return wrap(codeBold, s) }
 
 // BoldAll makes an already-styled string bold across every color segment.
 // Each color helper ends its span with a reset, which would also clear bold, so
@@ -86,4 +87,60 @@ func Info(msg string) string {
 
 func Infof(format string, a ...any) string {
 	return Info(fmt.Sprintf(format, a...))
+}
+
+var ansiRE = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+// Width reports how wide a string prints, ignoring the color escapes in it.
+func Width(s string) int {
+	return len([]rune(ansiRE.ReplaceAllString(s, "")))
+}
+
+// Module output uses the bracketed markers scanners conventionally print:
+// [+] a result, [-] nothing found or a result that could not be read, and
+// [!] something the user should know about but that does not stop the run.
+
+func Found(msg string) string {
+	return Green("[+] ") + msg
+}
+
+func Foundf(format string, a ...any) string {
+	return Found(fmt.Sprintf(format, a...))
+}
+
+func Failure(msg string) string {
+	return Red("[-] ") + msg
+}
+
+func Failuref(format string, a ...any) string {
+	return Failure(fmt.Sprintf(format, a...))
+}
+
+func Alert(msg string) string {
+	return Yellow("[!] ") + msg
+}
+
+func Alertf(format string, a ...any) string {
+	return Alert(fmt.Sprintf(format, a...))
+}
+
+// Section renders a block of module output under a bracketed heading, e.g.
+// "[DNS]". Lines are terminated for raw mode.
+func Section(title string, body ...string) string {
+	var b strings.Builder
+
+	b.WriteString("\r\n")
+	b.WriteString(Bold(Cyan("["+title+"]")) + "\r\n")
+	for _, line := range body {
+		b.WriteString(line + "\r\n")
+	}
+	b.WriteString("\r\n")
+
+	return b.String()
+}
+
+// Field renders an indented "label value" row, with the label padded to width
+// so a run of them forms a column.
+func Field(label string, width int, value string) string {
+	return "  " + Gray(fmt.Sprintf("%-*s", width, label)) + " " + value
 }
