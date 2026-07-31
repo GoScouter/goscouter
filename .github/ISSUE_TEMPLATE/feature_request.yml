@@ -35,53 +35,6 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: proposal
-    attributes:
-      label: Proposed solution
-      description: What should GoScouter do instead? Sketch the flags, commands, or output.
-      placeholder: |
-        A `--exec "<command>"` flag that runs one shell command against the
-        target and exits, so the tool is usable non-interactively.
-    validations:
-      required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: What does this touch?
-      description: Pick the closest fit — it doesn't have to be exact.
-      options:
-        - CLI / interactive shell
-        - Module system or protocol
-        - Output and reporting
-        - Configuration
-        - Install / build / release
-        - Documentation
-        - Not sure
-    validations:
-      required: true
-
-  - type: checkboxes
-    id: module-check
-    attributes:
-      label: Could this be a module?
-      description: |
-        New probes and analyzers usually belong in their own module repository
-        rather than in the core — see
-        [Writing a module](https://github.com/GoScouter/goscouter/blob/main/CONTRIBUTING.md#writing-a-module).
-      options:
-        - label: I considered this, and it needs to live in the core.
-          required: false
-
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives you considered
-      description: Other tools, workarounds, or designs you looked at, and why they fell short.
-    validations:
-      required: false
-
   - type: dropdown
     id: contribute
     attributes:
@@ -92,11 +45,3 @@ body:
         - 'No, just suggesting it'
     validations:
       required: true
-
-  - type: textarea
-    id: context
-    attributes:
-      label: Anything else?
-      description: Mockups, prior art, links to how other tools handle it.
-    validations:
-      required: false
