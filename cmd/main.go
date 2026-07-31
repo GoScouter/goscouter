@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -32,12 +33,12 @@ var interrupted atomic.Bool
 
 func main() {
 	version := flag.Bool("version", false, "Returns goscouter cli version")
-    targetSite := flag.String("target", "", "The site to target")
-    flag.Parse()
+	targetSite := flag.String("target", "", "The site to target")
+	flag.Parse()
 
 	if *version {
-        fmt.Println("Version:", VERSION)
-        os.Exit(0)
+		fmt.Println("Version:", VERSION)
+		os.Exit(0)
 	}
 
 	if *targetSite == "" {
@@ -58,8 +59,8 @@ func main() {
 	if err = versions.SuggestUpdate(VERSION); err != nil {
 		logger.Log.Warn("Update check failed", "error", err)
 		fmt.Printf("%s\n\n", style.Error("Update: "+err.Error()))
-	    return
-    }
+		return
+	}
 
 	fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(*targetSite))
 	logger.Log.Info("Entering terminal raw mode")
@@ -70,6 +71,31 @@ func main() {
 
 	logger.Log.Info("Loading modules")
 	moduleManager := module.NewManager()
+
+	if err = moduleManager.LoadExternals(context.Background()); err != nil {
+		panic(err)
+	}
+
+	logger.Log.Info("Building module dependency graph")
+	graph, err := moduleManager.Build()
+	if err != nil {
+		logger.Log.Warn("Module dependency graph is incomplete", "error", err)
+		fmt.Printf("%s\n", style.Error("Modules: "+err.Error()))
+	}
+	if order, err := graph.Order(); err == nil {
+		logger.Log.Info("Module run order resolved", "order", strings.Join(order, " -> "))
+	}
+
+	runner, err := module.CreateRunner()
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		if err := runner.Start(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
 
 	logger.Log.Info("Starting command manager")
 	commandManager, err := cmd.NewManager(*targetSite, moduleManager)
@@ -126,6 +152,7 @@ func main() {
 			fmt.Printf("%s\r\n", style.Error(err.Error()))
 			continue
 		}
+		runner.CleanupState()
 	}
 
 	logger.Log.Info("Exiting terminal raw mode, restoring old state")
@@ -145,5 +172,5 @@ func printBanner() {
 	}
 	internal.Version = version
 
-    utils.PrintBanner(internal.Version, internal.BuildTime)
+	utils.PrintBanner(internal.Version, internal.BuildTime)
 }

@@ -59,7 +59,6 @@ pipelines, and extend it with your own probes.
 | -------- | :-------: | ------------------------------ |
 | Linux    |    ✅     | Primary development platform   |
 | macOS    |    ✅     | Intel & Apple Silicon          |
-| Windows  |    ✅     | Windows 10 / 11                 |
 
 ## Installation
 
@@ -75,24 +74,16 @@ SHA-256 checksum, and installs it.
 curl -fsSL https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.sh | sh
 ```
 
-**Windows** (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/GoScouter/GoScouter/main/scripts/install.ps1 | iex
-```
-
 By default `gs` lands in `/usr/local/bin` when that's writable and `~/.local/bin`
-otherwise; on Windows it goes to `%LOCALAPPDATA%\Programs\GoScouter`, which the
-script adds to your user `PATH`.
+otherwise.
 
 Both scripts take the same options:
 
-| Linux / macOS     | Windows             | Environment      | Description                             |
-| ----------------- | ------------------- | ---------------- | --------------------------------------- |
-| `--version <tag>` | `-Version <tag>`    | `GS_VERSION`     | Release tag to install (default: latest) |
-| `--dir <path>`    | `-InstallDir <path>`| `GS_INSTALL_DIR` | Install directory                       |
-| `--no-verify`     | `-NoVerify`         | `GS_NO_VERIFY=1` | Skip the checksum check                 |
-| —                 | `-NoPath`           | —                | Leave `PATH` untouched                  |
+| Linux / macOS     | Environment         | Description                               |
+| ----------------- | ------------------- | ----------------------------------------- |
+| `--version <tag>` | `GS_VERSION`        | Release tag to install (default: latest)  |
+| `--dir <path>`    | `GS_INSTALL_DIR`    | Install directory                         |
+| `--no-verify`     | `GS_NO_VERIFY=1`    | Skip the checksum check                   |
 
 A piped script can't take flags, so either use the environment variables:
 
@@ -141,20 +132,7 @@ platform, use the `release-build` target:
 # Cross-compile for a specific OS/arch — output lands in dist/
 make release-build GOOS=linux   GOARCH=amd64   # dist/gs-linux-amd64
 make release-build GOOS=darwin  GOARCH=arm64   # dist/gs-darwin-arm64
-make release-build GOOS=windows GOARCH=amd64   # dist/gs-windows-amd64.exe
 ```
-
-### Other Makefile targets
-
-| Target               | Description                                    |
-| -------------------- | ---------------------------------------------- |
-| `make build`         | Build the `gs` binary                          |
-| `make run`           | Build and run directly via `go run`            |
-| `make test`          | Run the test suite with the race detector      |
-| `make fmt`           | Format the source with `go fmt`                |
-| `make vet`           | Run `go vet`                                   |
-| `make tidy`          | Tidy `go.mod` / `go.sum`                        |
-| `make clean`         | Remove build artifacts                         |
 
 ## Usage
 

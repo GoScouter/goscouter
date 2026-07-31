@@ -9,7 +9,7 @@ import (
 )
 
 type HelpCommand struct {
-	Manager *Manager
+	Manager *CommandManager
 }
 
 func (cmd *HelpCommand) Name() string {
@@ -27,10 +27,7 @@ func (cmd *HelpCommand) Exec(args []string) error {
 	if cmd.Manager != nil {
 		names := make([]string, 0, len(cmd.Manager.Commands))
 		width := 0
-		for name, command := range cmd.Manager.Commands {
-			if _, ok := command.(*ExternalCommand); ok {
-				continue
-			}
+		for name := range cmd.Manager.Commands {
 			names = append(names, name)
 			if len(name) > width {
 				width = len(name)
@@ -57,6 +54,6 @@ func (cmd *HelpCommand) Exec(args []string) error {
 		style.Dim("Returns goscouter cli version"),
 	))
 
-    fmt.Printf("%s\r\n", b.String())
+	fmt.Printf("%s\r\n", b.String())
 	return nil
 }

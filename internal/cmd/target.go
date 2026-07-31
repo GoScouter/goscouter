@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-
 	"goscouter/internal/logger"
 	"goscouter/internal/style"
 )
 
 type TargetCommand struct {
-	Manager *Manager
+	Manager *CommandManager
 }
 
 func (cmd *TargetCommand) Name() string {

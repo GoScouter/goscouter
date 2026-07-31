@@ -2,7 +2,9 @@ package module
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"goscouter/internal/net/subdomain"
@@ -13,32 +15,16 @@ import (
 
 type SubdomainsModule struct{}
 
-func (m *SubdomainsModule) Name() string {
-	return "subdomains"
-}
-
-func (m *SubdomainsModule) Description() string {
-	return "Gather the subdomains of the target domain."
-}
-
-func (m *SubdomainsModule) Version() string {
-	return "0.0.1"
-}
-
-type subdomainResults struct {
-	Subs []pkg.Subdomain
-}
-
-func (r subdomainResults) Render() string {
-	var b strings.Builder
-	for _, s := range r.Subs {
-		b.WriteString(s.Render())
-		b.WriteString("\r\n")
+func (m *SubdomainsModule) Info() sdk.ModuleInfo {
+	return sdk.ModuleInfo{
+		Name:         "subdomains",
+		Author:       internalAuthor,
+		Description:  "Gather the subdomains of the target domain.",
+		Dependencies: make([]sdk.ModuleNamespace, 0),
 	}
-	return b.String()
 }
 
-func (m *SubdomainsModule) Scout(target string, _ []string) (sdk.Result, error) {
+func (m *SubdomainsModule) Scout(target string, _ []string) (json.RawMessage, error) {
 	fmt.Printf("» subdomains: enumerating %s\r\n", target)
 
 	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
@@ -49,5 +35,29 @@ func (m *SubdomainsModule) Scout(target string, _ []string) (sdk.Result, error) 
 		return nil, err
 	}
 
-	return subdomainResults{Subs: subdomains}, nil
+	data, err := json.Marshal(subdomainResults{Subs: subdomains})
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+type subdomainResults struct {
+	Subs []pkg.Subdomain `json:"subs"`
+}
+
+func (m *SubdomainsModule) Render(raw json.RawMessage) string {
+	var results subdomainResults
+	if err := json.Unmarshal(raw, &results); err != nil {
+		log.Print(err.Error())
+		return ""
+	}
+
+	var b strings.Builder
+	for _, s := range results.Subs {
+		b.WriteString(s.Render())
+		b.WriteString("\r\n")
+	}
+	return b.String()
 }

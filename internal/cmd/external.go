@@ -2,36 +2,37 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/GoScouter/sdk"
+	"goscouter/internal/module"
 )
 
 type ExternalCommand struct {
-	Manager    *Manager
-	ModuleName string
-	Module     string
+	CmdManager    *CommandManager
+	ModuleManager *module.Manager
+	External      *module.External
+
+	Reporter *module.Reporter
 }
 
 func (cmd *ExternalCommand) Name() string {
-	return cmd.ModuleName
+	return module.Key(module.Namespace(cmd.External.Info))
 }
 
 func (cmd *ExternalCommand) Description() string {
-	return "No need :O"
+	return cmd.External.Info.Description
 }
 
 func (cmd *ExternalCommand) Exec(args []string) error {
-	bin, err := sdk.Open(cmd.Module)
-	if err != nil {
-		return err
+	if cmd.Reporter == nil {
+		return fmt.Errorf("cannot use %s command, socket conn was not found", cmd.Name())
 	}
-	defer bin.Close()
 
-	res, err := bin.Scout(cmd.Manager.Target, args)
+	_, views, err := module.RunInOrder(cmd.External.Info, cmd.CmdManager.Target, args, cmd.ModuleManager, cmd.Reporter)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(res.Render())
+	fmt.Print(strings.Join(views, ""))
 	return nil
 }

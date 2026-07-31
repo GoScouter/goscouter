@@ -1,40 +1,49 @@
 package module
 
 import (
+	"encoding/json"
 	"flag"
-	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"strings"
 
 	"goscouter/internal/web"
+	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
 )
 
 type HttpModule struct{}
 
-func (m *HttpModule) Name() string {
-	return "http"
+func (m *HttpModule) Info() sdk.ModuleInfo {
+	return sdk.ModuleInfo{
+		Name:         "http",
+		Author:       internalAuthor,
+		Description:  "Gather the http information of the target domain.",
+		Dependencies: make([]sdk.ModuleNamespace, 0),
+	}
 }
 
-func (m *HttpModule) Description() string {
-	return "Gather the http information of the target domain."
+func forceScheme(target, scheme string) string {
+	if u, err := url.Parse(target); err == nil && u.Host != "" {
+		u.Scheme = scheme
+		return u.String()
+	}
+
+	if i := strings.Index(target, "://"); i >= 0 {
+		target = target[i+3:]
+	}
+	return scheme + "://" + target
 }
 
-func (m *HttpModule) Version() string {
-	return "0.0.1"
-}
-
-func (m *HttpModule) Scout(target string, args []string) (sdk.Result, error) {
+func (m *HttpModule) Scout(target string, args []string) (json.RawMessage, error) {
 	fs := flag.NewFlagSet("http", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	useHTTPS := fs.Bool("ssl", false, "force the https:// scheme on the target")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("» http: probing %s\r\n", target)
 
 	scheme := "HTTP"
 	if *useHTTPS {
@@ -54,17 +63,20 @@ func (m *HttpModule) Scout(target string, args []string) (sdk.Result, error) {
 		return nil, err
 	}
 
-	return records, nil
+	data, err := json.Marshal(records)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
-func forceScheme(target, scheme string) string {
-	if u, err := url.Parse(target); err == nil && u.Host != "" {
-		u.Scheme = scheme
-		return u.String()
+func (m *HttpModule) Render(raw json.RawMessage) string {
+	var r records.HTTPRecords
+	if err := json.Unmarshal(raw, &r); err != nil {
+		log.Print(err.Error())
+		return ""
 	}
 
-	if i := strings.Index(target, "://"); i >= 0 {
-		target = target[i+3:]
-	}
-	return scheme + "://" + target
+	return r.Render()
 }

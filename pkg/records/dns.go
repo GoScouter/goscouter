@@ -6,13 +6,13 @@ import (
 )
 
 type DNSRecords struct {
-	Host  string
-	A     []string
-	AAAA  []string
-	CNAME string
-	MX    []string
-	NS    []string
-	TXT   []string
+	Host  string   `json:"host"`
+	A     []string `json:"a"`
+	AAAA  []string `json:"aaaa"`
+	CNAME string   `json:"cname"`
+	MX    []string `json:"mx"`
+	NS    []string `json:"ns"`
+	TXT   []string `json:"txt"`
 }
 
 func (r *DNSRecords) Render() string {
@@ -25,7 +25,7 @@ func (r *DNSRecords) Render() string {
 		writeRecordSet(&b, "CNAME", []string{r.CNAME})
 	}
 
-    writeRecordSet(&b, "MX", r.MX)
+	writeRecordSet(&b, "MX", r.MX)
 	writeRecordSet(&b, "NS", r.NS)
 	writeRecordSet(&b, "TXT", r.TXT)
 
@@ -42,4 +42,3 @@ func writeRecordSet(b *strings.Builder, label string, values []string) {
 		fmt.Fprintf(b, "  %-6s %s\r\n", label, v)
 	}
 }
-
