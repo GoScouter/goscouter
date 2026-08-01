@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"goscouter/internal"
-	"goscouter/internal/style"
+
+	"github.com/GoScouter/sdk/style"
 )
 
 type InfoCommand struct{}

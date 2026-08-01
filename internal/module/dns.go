@@ -7,10 +7,10 @@ import (
 
 	"goscouter/internal/dns"
 	"goscouter/internal/logging"
-	"goscouter/internal/style"
 	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 type DnsModule struct{}

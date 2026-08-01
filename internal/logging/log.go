@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 var (

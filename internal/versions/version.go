@@ -14,8 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"goscouter/internal/style"
-
+	"github.com/GoScouter/sdk/style"
 	"github.com/google/go-github/github"
 )
 

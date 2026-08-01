@@ -1,20 +1,20 @@
-package scanning
+package module
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"goscouter/internal/dns"
+	"goscouter/internal/logging"
+	"goscouter/internal/net/subdomain"
+	"goscouter/pkg/scan"
+	"goscouter/pkg/subdomains"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
-	"goscouter/internal/dns"
-	"goscouter/internal/logging"
-	"goscouter/internal/module"
-	"goscouter/internal/net/subdomain"
-	"goscouter/internal/style"
-	"goscouter/pkg/subdomains"
+	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 const (
@@ -22,25 +22,19 @@ const (
 	maxConcurrentLookups = 64
 )
 
-type ModuleResult struct {
-	Module string          `json:"module"`
-	Data   json.RawMessage `json:"data,omitempty"`
-	Error  string          `json:"error,omitempty"`
+type ScanModule struct {
+	Manager *Manager
 }
 
-type HostResult struct {
-	Host      string         `json:"host"`
-	LastSeen  time.Time      `json:"last_seen,omitzero"`
-	Addresses []string       `json:"addresses,omitempty"`
-	Modules   []ModuleResult `json:"modules"`
+var ScanModuleInfo = sdk.ModuleInfo{
+	Name:         "scan",
+	Author:       internalAuthor,
+	Description:  "Makes a complete scan of the target",
+	Dependencies: make([]sdk.ModuleNamespace, 0),
 }
 
-type Result struct {
-	Target string       `json:"target"`
-	Host   string       `json:"host"`
-	Found  int          `json:"found"`
-	Live   int          `json:"live"`
-	Hosts  []HostResult `json:"hosts"`
+func (m *ScanModule) Info() sdk.ModuleInfo {
+	return ScanModuleInfo
 }
 
 func hostOf(target string) string {
@@ -63,13 +57,10 @@ func hostOf(target string) string {
 	return t
 }
 
-func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
-	if manager == nil || manager.Graph == nil {
-		return nil, errors.New("scanning: module graph is not built")
-	}
-
+func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error) {
 	started := time.Now()
 	host := hostOf(target)
+	manager := m.Manager
 
 	order, err := manager.Graph.Order()
 	if err != nil {
@@ -87,11 +78,11 @@ func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
 	}
 
 	candidates := candidates(found, host)
-	logging.Step("%d unique subdomains, resolving", len(candidates))
+	logging.Step("%d unique hosts, resolving", len(candidates))
 
 	hosts := resolve(context.Background(), candidates, order)
 
-	result := Result{
+	result := scan.Result{
 		Target: target,
 		Host:   host,
 		Found:  len(candidates),
@@ -104,7 +95,7 @@ func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
 		return json.Marshal(result)
 	}
 
-	malshan, err := module.DialReporter()
+	malshan, err := DialReporter()
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +110,7 @@ func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
 
 		for hi := range result.Hosts {
 			wg.Add(1)
-			go func(slot *ModuleResult, name string, m string, reporter *module.Reporter) {
+			go func(slot *scan.ModuleResult, name string, m string, reporter *Reporter) {
 				defer wg.Done()
 
 				sem <- struct{}{}
@@ -127,7 +118,7 @@ func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
 
 				slot.Module = m
 
-				data, _, err := module.RunModule(name, []string{}, m, manager, reporter)
+				data, _, err := RunModule(name, []string{}, m, manager, reporter)
 				if err != nil {
 					slot.Error = err.Error()
 					logging.Failed("%s %s: %v", pad(name), style.Gray(m), err)
@@ -149,17 +140,32 @@ func Scan(target string, manager *module.Manager) (json.RawMessage, error) {
 	}
 
 	logging.Step("Scan finished in %s", time.Since(started).Round(time.Millisecond))
-
 	return json.Marshal(result)
 }
 
+func (m *ScanModule) Render(raw json.RawMessage) string {
+	return "\r\n" + style.Render(raw)
+}
+
 func candidates(found []subdomains.Subdomain, host string) []subdomains.Subdomain {
-	out := make([]subdomains.Subdomain, 0, len(found))
-	seen := make(map[string]bool, len(found))
+	out := make([]subdomains.Subdomain, 0, len(found)+1)
+	seen := make(map[string]bool, len(found)+1)
+
+	if host != "" {
+		out = append(out, subdomains.Subdomain{Name: host})
+		seen[host] = true
+	}
 
 	for _, sub := range found {
 		name := hostOf(sub.Name)
-		if name == "" || name == host || seen[name] {
+		if name == "" {
+			continue
+		}
+		if name == host {
+			out[0].LastSeen = sub.LastSeen
+			continue
+		}
+		if seen[name] {
 			continue
 		}
 		seen[name] = true
@@ -170,7 +176,7 @@ func candidates(found []subdomains.Subdomain, host string) []subdomains.Subdomai
 	return out
 }
 
-func resolve(ctx context.Context, candidates []subdomains.Subdomain, order []string) []HostResult {
+func resolve(ctx context.Context, candidates []subdomains.Subdomain, order []string) []scan.HostResult {
 	type lookup struct {
 		addrs []string
 		err   error
@@ -195,7 +201,7 @@ func resolve(ctx context.Context, candidates []subdomains.Subdomain, order []str
 
 	wg.Wait()
 
-	hosts := make([]HostResult, 0, len(candidates))
+	hosts := make([]scan.HostResult, 0, len(candidates))
 	for i, c := range candidates {
 		if results[i].err != nil {
 			logging.Failed("%s does not resolve", pad(c.Name))
@@ -204,11 +210,11 @@ func resolve(ctx context.Context, candidates []subdomains.Subdomain, order []str
 
 		logging.Found("%s %s", pad(c.Name), style.Gray(strings.Join(results[i].addrs, ", ")))
 
-		hosts = append(hosts, HostResult{
+		hosts = append(hosts, scan.HostResult{
 			Host:      c.Name,
 			LastSeen:  c.LastSeen,
 			Addresses: results[i].addrs,
-			Modules:   make([]ModuleResult, len(order)),
+			Modules:   make([]scan.ModuleResult, len(order)),
 		})
 	}
 

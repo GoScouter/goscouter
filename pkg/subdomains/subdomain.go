@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 type Subdomain struct {

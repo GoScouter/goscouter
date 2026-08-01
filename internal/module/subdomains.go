@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 
 	"goscouter/internal/net/subdomain"
-	"goscouter/internal/style"
 	pkg "goscouter/pkg/subdomains"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 type SubdomainsModule struct{}

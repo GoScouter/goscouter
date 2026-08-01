@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"goscouter/internal/style"
 	"goscouter/internal/utils"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 const infoTimeout = 5 * time.Second
@@ -68,6 +68,9 @@ func NewManager() *Manager {
 	manager.AddInternal(&SubdomainsModule{})
 	manager.AddInternal(&DnsModule{})
 	manager.AddInternal(&HttpModule{})
+	manager.AddInternal(&ScanModule{
+		Manager: manager,
+	})
 
 	return manager
 }

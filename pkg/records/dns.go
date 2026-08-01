@@ -1,7 +1,7 @@
 package records
 
 import (
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 type DNSRecords struct {

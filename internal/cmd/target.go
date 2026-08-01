@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 type TargetCommand struct {

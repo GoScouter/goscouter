@@ -17,10 +17,11 @@ import (
 	"goscouter/internal"
 	"goscouter/internal/cmd"
 	"goscouter/internal/module"
-	"goscouter/internal/style"
 	"goscouter/internal/terminal"
 	"goscouter/internal/utils"
 	"goscouter/internal/versions"
+
+	"github.com/GoScouter/sdk/style"
 )
 
 var (

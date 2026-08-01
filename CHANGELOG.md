@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rewrote the module subsystem around a central manager and runner, replacing
   the previous per-command install/uninstall/scan implementations.
 - Replaced the standalone `internal/logger` package with output helpers in
-  `internal/style`, unifying how commands and modules print to the terminal.
+  `../sdk/style`, unifying how commands and modules print to the terminal.
 - Reworked DNS, HTTP, and subdomain record handling in `pkg/records` and
   `pkg/subdomains`.
 - The HTTP module fetches its target once instead of twice: it checked the

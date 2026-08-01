@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"goscouter/internal/logging"
-	"goscouter/internal/style"
 	"goscouter/internal/web"
 	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 type HttpModule struct{}

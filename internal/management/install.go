@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"goscouter/internal/module"
-	"goscouter/internal/style"
 	"goscouter/internal/utils"
 	"goscouter/pkg/modules"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"time"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 	"github.com/go-git/go-git/v5"
 )
 

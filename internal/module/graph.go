@@ -3,6 +3,7 @@ package module
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/GoScouter/sdk"
 	"github.com/stevenle/topsort"
@@ -21,6 +22,10 @@ func IsInternalAuthor(author string) bool {
 }
 
 const everything = "*"
+
+func scanKey() string {
+	return Key(Namespace(ScanModuleInfo))
+}
 
 type Graph struct {
 	sorter *topsort.Graph
@@ -67,7 +72,19 @@ func (g *Graph) Plan(key string) ([]string, error) {
 	if !g.known[key] {
 		return nil, fmt.Errorf("unknown module %q", key)
 	}
-	return g.sorter.TopSort(key)
+
+	plan, err := g.sorter.TopSort(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// scan runs every other module itself, so it stands in for whatever the
+	// requested module depends on. The module itself still runs, last.
+	if key != scanKey() && slices.Contains(plan, scanKey()) {
+		return []string{scanKey(), key}, nil
+	}
+
+	return plan, nil
 }
 
 func (g *Graph) Order() ([]string, error) {
@@ -75,7 +92,23 @@ func (g *Graph) Order() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return order[:len(order)-1], nil
+
+	order = order[:len(order)-1]
+
+	// scan is what walks this order, so neither scan nor anything that depends on it belongs in it.
+	out := make([]string, 0, len(order))
+	for _, key := range order {
+		plan, err := g.Plan(key)
+		if err != nil {
+			return nil, err
+		}
+		if slices.Contains(plan, scanKey()) {
+			continue
+		}
+		out = append(out, key)
+	}
+
+	return out, nil
 }
 
 func missing(key string, dep sdk.ModuleNamespace) error {

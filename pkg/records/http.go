@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 type HTTPRecords struct {

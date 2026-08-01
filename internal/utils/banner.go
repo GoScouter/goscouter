@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"goscouter/internal/style"
+	"github.com/GoScouter/sdk/style"
 )
 
 const BANNER = `

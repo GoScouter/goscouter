@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"goscouter/internal/module"
-	"goscouter/internal/style"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/GoScouter/sdk"
+	"github.com/GoScouter/sdk/style"
 )
 
 var namePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
