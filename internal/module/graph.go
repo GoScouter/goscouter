@@ -16,6 +16,10 @@ func Namespace(info sdk.ModuleInfo) sdk.ModuleNamespace {
 	return sdk.ModuleNamespace{Name: info.Name, Author: info.Author}
 }
 
+func IsInternalAuthor(author string) bool {
+	return author == internalAuthor
+}
+
 const everything = "*"
 
 type Graph struct {

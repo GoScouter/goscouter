@@ -33,10 +33,36 @@ var interrupted atomic.Bool
 func main() {
 	version := flag.Bool("version", false, "Returns goscouter cli version")
 	targetSite := flag.String("target", "", "The site to target")
+
+	install := flag.String("install", "", "Module to install")
+	uninstall := flag.String("uninstall", "", "Module to uninstall (author:name)")
+
 	flag.Parse()
 
+	if *install != "" {
+		if err := management.InstallModule(context.Background(), *install); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to install modules %s. %v\n", *install, err)
+			os.Exit(1)
+			return
+		}
+
+		os.Exit(0)
+		return
+	}
+
+	if *uninstall != "" {
+		if err := management.UninstallModule(context.Background(), *uninstall); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to uninstall module %s. %v\n", *uninstall, err)
+			os.Exit(1)
+			return
+		}
+
+		os.Exit(0)
+		return
+	}
+
 	if *version {
-		fmt.Println(versionString())
+		fmt.Println("Version: " + versionString())
 		return
 	}
 
