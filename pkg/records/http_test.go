@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/GoScouter/sdk/style"
 )
 
 func TestHTTPRecordsRender(t *testing.T) {
@@ -20,7 +22,7 @@ func TestHTTPRecordsRender(t *testing.T) {
 		},
 	}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 
 	for _, w := range []string{
 		"[HTTPS]",
@@ -44,7 +46,7 @@ func TestHTTPRecordsRenderShowsRedirect(t *testing.T) {
 		Proto:      "HTTP/1.1",
 	}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 
 	if !strings.Contains(out, "Redirect : http://example.com -> https://example.com/home") {
 		t.Errorf("Render() missing redirect line\ngot:\n%s", out)
@@ -60,7 +62,7 @@ func TestHTTPRecordsRenderNoRedirectWhenSameURL(t *testing.T) {
 		Proto:      "HTTP/1.1",
 	}
 
-	if strings.Contains(r.Render(), "Redirect") {
+	if strings.Contains(stripANSI(r.Render()), "Redirect") {
 		t.Errorf("Render() should not show a redirect when the URL is unchanged")
 	}
 }
@@ -77,7 +79,7 @@ func TestHTTPRecordsRenderHeadersSorted(t *testing.T) {
 		},
 	}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 	ai := strings.Index(out, "Alpha:")
 	mi := strings.Index(out, "Mid:")
 	zi := strings.Index(out, "Zeta:")
@@ -95,24 +97,39 @@ func TestHTTPRecordsRenderJoinsMultiValueHeaders(t *testing.T) {
 		Headers: http.Header{"Set-Cookie": []string{"a=1", "b=2"}},
 	}
 
-	if !strings.Contains(r.Render(), "Set-Cookie: a=1, b=2") {
-		t.Errorf("Render() should join multi-value headers with ', '\ngot:\n%s", r.Render())
+	out := stripANSI(r.Render())
+	if !strings.Contains(out, "Set-Cookie: a=1, b=2") {
+		t.Errorf("Render() should join multi-value headers with ', '\ngot:\n%s", out)
 	}
 }
 
 func TestHTTPRecordsRenderNoHeaders(t *testing.T) {
 	r := &HTTPRecords{Scheme: "HTTP", Status: "200 OK", Proto: "HTTP/1.1"}
 
-	if !strings.Contains(r.Render(), "(none)") {
-		t.Errorf("Render() should print (none) when there are no headers\ngot:\n%s", r.Render())
+	out := stripANSI(r.Render())
+	if !strings.Contains(out, "(none)") {
+		t.Errorf("Render() should print (none) when there are no headers\ngot:\n%s", out)
 	}
 }
 
 func TestStatusColorByClass(t *testing.T) {
-	// Styling is off in tests, so this only checks the status survives intact.
-	for _, code := range []int{0, 200, 301, 404, 500} {
-		if got := statusColor(code, "status"); got != "status" {
-			t.Errorf("statusColor(%d) = %q, want the status text unchanged", code, got)
+	for _, tc := range []struct {
+		status int
+		color  string
+	}{
+		{0, style.CodeWhite},
+		{200, style.CodeGreen},
+		{301, style.CodeCyan},
+		{404, style.CodeYellow},
+		{500, style.CodeRed},
+	} {
+		got := statusColor(tc.status, "status")
+
+		if stripANSI(got) != "status" {
+			t.Errorf("statusColor(%d) = %q, want the status text unchanged", tc.status, stripANSI(got))
+		}
+		if !strings.HasPrefix(got, tc.color) {
+			t.Errorf("statusColor(%d) = %q, want it tinted with %q", tc.status, got, tc.color)
 		}
 	}
 }

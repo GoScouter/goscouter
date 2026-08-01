@@ -16,7 +16,7 @@ func TestDNSRecordsRender(t *testing.T) {
 		TXT:   []string{"v=spf1 -all"},
 	}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 
 	wantContains := []string{
 		"[DNS]",
@@ -39,7 +39,7 @@ func TestDNSRecordsRender(t *testing.T) {
 func TestDNSRecordsRenderOmitsEmpty(t *testing.T) {
 	r := &DNSRecords{Host: "example.com", A: []string{"1.2.3.4"}}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 
 	for _, label := range []string{"  AAAA ", "  CNAME ", "  MX ", "  NS ", "  TXT "} {
 		if strings.Contains(out, label) {
@@ -51,7 +51,7 @@ func TestDNSRecordsRenderOmitsEmpty(t *testing.T) {
 func TestDNSRecordsRenderEmpty(t *testing.T) {
 	r := &DNSRecords{Host: "example.com"}
 
-	out := r.Render()
+	out := stripANSI(r.Render())
 
 	if !strings.Contains(out, "[DNS]") {
 		t.Errorf("Render() should still contain the [DNS] heading, got:\n%s", out)
@@ -80,8 +80,8 @@ func TestRecordSetFormat(t *testing.T) {
 		t.Fatalf("recordSet returned %d lines, want %d", len(lines), len(want))
 	}
 	for i := range want {
-		if lines[i] != want[i] {
-			t.Errorf("recordSet line %d = %q, want %q", i, lines[i], want[i])
+		if stripANSI(lines[i]) != want[i] {
+			t.Errorf("recordSet line %d = %q, want %q", i, stripANSI(lines[i]), want[i])
 		}
 	}
 }
