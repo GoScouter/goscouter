@@ -151,7 +151,7 @@ Once inside the shell, type `help` to list the available built-in commands:
 ```bash
 $ gs --target https://example.com
 # ... banner ...
-gs> help              # list built-in commands
+gs> help              # list of commands
 gs> info              # show tool information
 gs> install https://github.com/GoScouter/some-module
 gs> exit              # leave the shell (or press Ctrl-D)
