@@ -30,13 +30,6 @@ var (
 
 var interrupted atomic.Bool
 
-func CodeRabbitTest() {
-	fmt.Println("Hey coderabbit")
-}
-
-func SonarqubeTest() {
-	fmt.Println("Hey sonar")
-}
 func main() {
 	version := flag.Bool("version", false, "Returns goscouter cli version")
 	targetSite := flag.String("target", "", "The site to target")
