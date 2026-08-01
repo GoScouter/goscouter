@@ -134,12 +134,44 @@ jobs:
         working-directory: dist/bin
         run: sha256sum gs-* > checksums.txt
 
+      - name: Extract changelog section
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          section="${VERSION#v}"
+
+          # Print everything between "## [<section>]" and the next "## [" heading,
+          # stopping early at the link-reference definitions at the bottom.
+          awk -v ver="$section" '
+            /^## \[/ {
+              if (found) exit
+              heading = $0
+              sub(/^## \[/, "", heading)
+              sub(/\].*$/, "", heading)
+              if (heading == ver) found = 1
+              next
+            }
+            found && /^\[[^]]+\]:/ { exit }
+            found { print }
+          ' CHANGELOG.md \
+            | sed -e '/./,$!d' | tac | sed -e '/./,$!d' | tac > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No CHANGELOG.md section for '${section}'. Add a '## [${section}] - <date>' entry before releasing."
+            exit 1
+          fi
+
+          echo "Release notes for ${VERSION}:"
+          cat release-notes.md
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
+          body_path: release-notes.md
           generate_release_notes: true
           files: |
             dist/bin/gs-*
-            dist/checksums.txt
+            dist/bin/checksums.txt
