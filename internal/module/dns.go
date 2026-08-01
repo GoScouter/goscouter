@@ -11,7 +11,6 @@ import (
 	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
-	"golang.org/x/net/publicsuffix"
 )
 
 type DnsModule struct{}
@@ -26,15 +25,6 @@ func (m *DnsModule) Info() sdk.ModuleInfo {
 }
 
 func (m *DnsModule) Scout(target string, _ []string) (json.RawMessage, error) {
-	eTLDPlusOne, err := publicsuffix.EffectiveTLDPlusOne(target)
-	if err != nil {
-		return nil, fmt.Errorf("invalid domain")
-	}
-
-	if target != eTLDPlusOne {
-		return nil, nil
-	}
-
 	parsed, err := url.Parse(target)
 	if err != nil {
 		return nil, fmt.Errorf("invalid target %q: %w", target, err)
