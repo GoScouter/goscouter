@@ -127,7 +127,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: gs-*
-          path: dist
+          path: dist/bin
           merge-multiple: true
 
       - name: Generate checksums
