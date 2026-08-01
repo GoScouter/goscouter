@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"goscouter/internal/management"
 	"io"
 	"os"
 	"os/signal"
@@ -52,6 +53,9 @@ func main() {
 
 func run(target string) error {
 	printBanner()
+	if err := management.InstallModule(context.Background(), "https://github.com/GoScouter/nginx-module"); err != nil {
+		panic(err)
+	}
 
 	if err := versions.SuggestUpdate(VERSION); err != nil {
 		return fmt.Errorf("update check: %w", err)
