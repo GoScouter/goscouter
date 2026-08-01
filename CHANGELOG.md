@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Module dependency graph resolution, so modules can depend on other modules
   and are loaded in the right order.
 - PDF summary output for network scans.
+- `scan` command: enumerates the target's subdomains and runs every installed
+  module against each one, returning the whole run as JSON. The shell prints
+  it as an indented tree instead of raw JSON.
+- Live scan progress with the usual `[+]`, `[-]`, and `[!]` markers, so a run
+  reports as it goes rather than only at the end. Added `internal/logging` for
+  the concurrency-safe output behind it, and wired it into the DNS and HTTP
+  modules.
+- Scans skip subdomains that no longer resolve, so dead names left behind in
+  certificate transparency logs no longer cost a timeout per module.
 - Community and contribution scaffolding: `CONTRIBUTING.md`, issue templates,
   and a PR review request workflow.
 
@@ -26,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `internal/style`, unifying how commands and modules print to the terminal.
 - Reworked DNS, HTTP, and subdomain record handling in `pkg/records` and
   `pkg/subdomains`.
+- The HTTP module fetches its target once instead of twice: it checked the
+  site status and then refetched the same URL for the records.
+- Subdomain enumeration during a scan is bounded by a timeout, so an
+  unresponsive certificate transparency source can no longer hang the run.
 - Documentation updates to `README.md` covering installation, module
   management, and usage.
 

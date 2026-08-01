@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"goscouter/internal/logging"
 	"goscouter/internal/style"
 	"goscouter/internal/web"
 	"goscouter/pkg/records"
@@ -53,15 +54,13 @@ func (m *HttpModule) Scout(target string, args []string) (json.RawMessage, error
 		target = forceScheme(target, "http")
 	}
 
-	_, err := web.CheckSiteStatus(target)
+	records, err := web.FetchHTTPRecords(target, scheme)
 	if err != nil {
+		logging.Failed("http: %s: %v", target, err)
 		return nil, err
 	}
 
-	records, err := web.FetchHTTPRecords(target, scheme)
-	if err != nil {
-		return nil, err
-	}
+	logging.Found("http: %s %s", target, records.Status)
 
 	data, err := json.Marshal(records)
 	if err != nil {

@@ -6,10 +6,12 @@ import (
 	"net/url"
 
 	"goscouter/internal/dns"
+	"goscouter/internal/logging"
 	"goscouter/internal/style"
 	"goscouter/pkg/records"
 
 	"github.com/GoScouter/sdk"
+	"golang.org/x/net/publicsuffix"
 )
 
 type DnsModule struct{}
@@ -24,6 +26,15 @@ func (m *DnsModule) Info() sdk.ModuleInfo {
 }
 
 func (m *DnsModule) Scout(target string, _ []string) (json.RawMessage, error) {
+	eTLDPlusOne, err := publicsuffix.EffectiveTLDPlusOne(target)
+	if err != nil {
+		return nil, fmt.Errorf("invalid domain")
+	}
+
+	if target != eTLDPlusOne {
+		return nil, nil
+	}
+
 	parsed, err := url.Parse(target)
 	if err != nil {
 		return nil, fmt.Errorf("invalid target %q: %w", target, err)
@@ -31,8 +42,12 @@ func (m *DnsModule) Scout(target string, _ []string) (json.RawMessage, error) {
 
 	records, err := dns.Lookup(parsed.Path)
 	if err != nil {
+		logging.Failed("dns: %s: %v", target, err)
 		return nil, err
 	}
+
+	logging.Found("dns: %s (%d A, %d AAAA, %d MX, %d NS, %d TXT)",
+		target, len(records.A), len(records.AAAA), len(records.MX), len(records.NS), len(records.TXT))
 
 	data, err := json.Marshal(records)
 	if err != nil {

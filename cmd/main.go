@@ -79,9 +79,6 @@ func main() {
 
 func run(target string) error {
 	printBanner()
-	if err := management.InstallModule(context.Background(), "https://github.com/GoScouter/nginx-module"); err != nil {
-		panic(err)
-	}
 
 	if err := versions.SuggestUpdate(VERSION); err != nil {
 		return fmt.Errorf("update check: %w", err)
@@ -129,6 +126,8 @@ func run(target string) error {
 		<-sigChan
 		interrupted.Store(true)
 	}()
+
+	runner.CleanupState()
 
 	reader := bufio.NewReader(os.Stdin)
 	for !interrupted.Load() {

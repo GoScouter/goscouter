@@ -64,6 +64,11 @@ func NewManager(target string, manager *module.Manager) (*CommandManager, error)
 		})
 	}
 
+	cm.addCommand(&ScanCommand{
+		CmdManager:    cm,
+		ModuleManager: manager,
+	})
+
 	return cm, nil
 }
 

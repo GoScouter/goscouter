@@ -22,8 +22,9 @@ type Finder struct {
 }
 
 var Finders = map[string]Finder{
-	"crtsh":       {Name: "crtsh", Fetch: fetchCrtSh},
-	"certspotter": {Name: "certspotter", Fetch: fetchCertSpotter},
+	"crtsh":        {Name: "crtsh", Fetch: fetchCrtSh},
+	"certspotter":  {Name: "certspotter", Fetch: fetchCertSpotter},
+	"hackertarget": {Name: "hackertarget", Fetch: fetchHackerTarget},
 }
 
 const TIMEOUT time.Duration = 5 * time.Second
@@ -144,6 +145,55 @@ func fetchCertSpotter(ctx context.Context, domain string) ([]subdomains.Subdomai
 			keepLatest(latest, n, t)
 		}
 	}
+	return flatten(latest), nil
+}
+
+func fetchHackerTarget(ctx context.Context, domain string) ([]subdomains.Subdomain, error) {
+	rawURL := fmt.Sprintf("https://api.hackertarget.com/hostsearch/?q=%s", url.QueryEscape(domain))
+
+	req, err := newRequest(ctx, rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("hackertarget returned status %d", resp.StatusCode)
+	}
+
+	suffix := "." + normalize(domain)
+
+	latest := make(map[string]time.Time)
+	scanner := bufio.NewScanner(resp.Body)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		host, _, ok := strings.Cut(line, ",")
+		if !ok {
+			return nil, fmt.Errorf("hackertarget: %s", line)
+		}
+
+		host = normalize(host)
+		if host != normalize(domain) && !strings.HasSuffix(host, suffix) {
+			continue
+		}
+
+		keepLatest(latest, host, time.Time{})
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading hackertarget response: %w", err)
+	}
+
 	return flatten(latest), nil
 }
 

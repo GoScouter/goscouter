@@ -42,9 +42,6 @@ func wrap(code, s string) string {
 
 func Bold(s string) string { return wrap(codeBold, s) }
 
-// BoldAll makes an already-styled string bold across every color segment.
-// Each color helper ends its span with a reset, which would also clear bold, so
-// bold is re-asserted after each reset instead of just wrapping the whole line.
 func BoldAll(s string) string {
 	if !enabled {
 		return s
@@ -65,8 +62,13 @@ func Prompt() string {
 	return Dim("(") + Bold(Purple("gs")) + Dim(")") + " " + Cyan("❯") + " "
 }
 
+func rawLines(msg string) string {
+	msg = strings.ReplaceAll(msg, "\r\n", "\n")
+	return strings.ReplaceAll(msg, "\n", "\r\n")
+}
+
 func Error(msg string) string {
-	return Red("✗ ") + msg
+	return Red("✗ ") + rawLines(msg)
 }
 
 func Errorf(format string, a ...any) string {
@@ -91,14 +93,9 @@ func Infof(format string, a ...any) string {
 
 var ansiRE = regexp.MustCompile("\x1b\\[[0-9;]*m")
 
-// Width reports how wide a string prints, ignoring the color escapes in it.
 func Width(s string) int {
 	return len([]rune(ansiRE.ReplaceAllString(s, "")))
 }
-
-// Module output uses the bracketed markers scanners conventionally print:
-// [+] a result, [-] nothing found or a result that could not be read, and
-// [!] something the user should know about but that does not stop the run.
 
 func Found(msg string) string {
 	return Green("[+] ") + msg
@@ -117,15 +114,13 @@ func Failuref(format string, a ...any) string {
 }
 
 func Alert(msg string) string {
-	return Yellow("[!] ") + msg
+	return Yellow("[!] ") + rawLines(msg)
 }
 
 func Alertf(format string, a ...any) string {
 	return Alert(fmt.Sprintf(format, a...))
 }
 
-// Section renders a block of module output under a bracketed heading, e.g.
-// "[DNS]". Lines are terminated for raw mode.
 func Section(title string, body ...string) string {
 	var b strings.Builder
 
@@ -139,8 +134,6 @@ func Section(title string, body ...string) string {
 	return b.String()
 }
 
-// Field renders an indented "label value" row, with the label padded to width
-// so a run of them forms a column.
 func Field(label string, width int, value string) string {
 	return "  " + Gray(fmt.Sprintf("%-*s", width, label)) + " " + value
 }

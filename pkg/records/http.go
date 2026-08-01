@@ -38,7 +38,6 @@ func (r *HTTPRecords) Render() string {
 	return style.Section(r.Scheme, lines...)
 }
 
-// field renders one "  Label    : value" row.
 func field(name, value string) string {
 	return label(name) + " " + value
 }

@@ -236,47 +236,53 @@ func RunInOrder(info sdk.ModuleInfo, target string, args []string, manager *Mana
 	viewOutput := make([]string, 0, len(plan))
 
 	for _, key := range plan {
-		author, name, _ := strings.Cut(key, ":")
-
-		ns := sdk.ModuleNamespace{Author: author, Name: name}
-
-		if author != internalAuthor {
-			m := manager.GetExternal(key)
-			if m == nil {
-				return dataOutput, viewOutput, fmt.Errorf("unknown module %q", key)
-			}
-
-			data, view, err := m.Scout(context.Background(), target, args)
-			if err != nil {
-				return dataOutput, viewOutput, err
-			}
-
-			if err := reporter.Report(ns, data); err != nil {
-				return dataOutput, viewOutput, err
-			}
-
-			dataOutput = append(dataOutput, data)
-			viewOutput = append(viewOutput, view)
-			continue
-		}
-
-		m := manager.GetInternal(key)
-		if m == nil {
-			return dataOutput, viewOutput, fmt.Errorf("unknown module %q", key)
-		}
-
-		data, err := m.Scout(target, args)
+		data, view, err := RunModule(target, args, key, manager, reporter)
 		if err != nil {
-			return dataOutput, viewOutput, err
-		}
-
-		if err := reporter.Report(ns, data); err != nil {
-			return dataOutput, viewOutput, err
+			return nil, nil, err
 		}
 
 		dataOutput = append(dataOutput, data)
-		viewOutput = append(viewOutput, m.Render(data))
+		viewOutput = append(viewOutput, view)
 	}
 
 	return dataOutput, viewOutput, nil
+}
+
+func RunModule(target string, args []string, key string, manager *Manager, reporter *Reporter) (json.RawMessage, string, error) {
+	author, name, _ := strings.Cut(key, ":")
+	ns := sdk.ModuleNamespace{Author: author, Name: name}
+
+	if ns.Author != internalAuthor {
+		m := manager.GetExternal(key)
+		if m == nil {
+			return nil, "", fmt.Errorf("unknown module %q", key)
+		}
+
+		data, view, err := m.Scout(context.Background(), target, args)
+		if err != nil {
+			return nil, "", err
+		}
+
+		if err := reporter.Report(ns, data); err != nil {
+			return nil, "", err
+		}
+
+		return data, view, nil
+	}
+
+	m := manager.GetInternal(key)
+	if m == nil {
+		return nil, "", fmt.Errorf("unknown module %q", key)
+	}
+
+	data, err := m.Scout(target, args)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if err := reporter.Report(ns, data); err != nil {
+		return nil, "", err
+	}
+
+	return data, m.Render(data), nil
 }

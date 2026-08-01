@@ -11,6 +11,22 @@ import (
 
 const TIMEOUT time.Duration = 5 * time.Second
 
+const RESOLVE_TIMEOUT time.Duration = 2 * time.Second
+
+func Resolve(ctx context.Context, host string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, RESOLVE_TIMEOUT)
+	defer cancel()
+
+	addrs, err := net.DefaultResolver.LookupHost(ctx, host)
+	if err != nil {
+		return nil, err
+	}
+	if len(addrs) == 0 {
+		return nil, fmt.Errorf("no addresses for %s", host)
+	}
+	return addrs, nil
+}
+
 func Lookup(host string) (*records.DNSRecords, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()

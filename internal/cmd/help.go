@@ -54,6 +54,16 @@ func (cmd *HelpCommand) Exec(args []string) error {
 		style.Dim("Returns goscouter cli version"),
 	))
 
+	b.WriteString(fmt.Sprintf("  %s  %s\r\n",
+		style.Cyan("--install"),
+		style.Dim("Installs an external module"),
+	))
+
+	b.WriteString(fmt.Sprintf("  %s  %s\r\n",
+		style.Cyan("--uninstall"),
+		style.Dim("Uninstalls an external module"),
+	))
+
 	fmt.Printf("%s\r\n", b.String())
 	return nil
 }
