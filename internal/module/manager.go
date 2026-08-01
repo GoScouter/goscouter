@@ -127,7 +127,7 @@ func ExternalDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(cacheDir, "gs"), nil
+	return filepath.Join(cacheDir, "gs", "modules"), nil
 }
 
 func (m *Manager) LoadExternals(ctx context.Context) error {

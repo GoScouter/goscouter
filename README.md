@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://goscouter.github.io"><strong>Documentation</strong></a>
+  <a href="https://goscouter.github.io"><strong>Website</strong></a>
   ·
   <a href="https://github.com/GoScouter/GoScouter/releases"><strong>Downloads</strong></a>
   ·
@@ -23,6 +23,22 @@
 </p>
 
 ---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Platform Support](#platform-support)
+- [Installation](#installation)
+    - [Install script](#install-script)
+    - [Manual download](#manual-download)
+    - [Build from source](#build-from-source)
+- [Management modules](#management-modules)
+    - [Install](#install)
+    - [Uninstall](#uninstall)
+- [Usage](#usage)
+    - [Example session](#example-session)
+- [Contributing](#contributing)
 
 ## Overview
 
@@ -36,7 +52,7 @@ Built with a focus on speed and extensibility, GoScouter is designed to grow
 with your workflow: enable only the modules you need, script it into your
 pipelines, and extend it with your own probes.
 
-> ⚠️ **Use responsibly.** GoScouter is intended for authorized security
+> **Use responsibly.** GoScouter is intended for authorized security
 > testing, research, and network administration only. Always ensure you have
 > explicit permission to scan and probe the networks and hosts you target.
 
@@ -54,11 +70,11 @@ pipelines, and extend it with your own probes.
   machine-friendly formats for scripting and automation.
 
 ## Platform Support
-
-| Platform | Supported | Notes                          |
-| -------- | :-------: | ------------------------------ |
-| Linux    |    ✅     | Primary development platform   |
-| macOS    |    ✅     | Intel & Apple Silicon          |
+| Platform | Status |
+| -------- | :----: |
+| Linux    |  OK    |
+| macOS    |  OK    |
+| Windows  |  N/A   |
 
 ## Installation
 
@@ -132,6 +148,19 @@ platform, use the `release-build` target:
 # Cross-compile for a specific OS/arch — output lands in dist/
 make release-build GOOS=linux   GOARCH=amd64   # dist/gs-linux-amd64
 make release-build GOOS=darwin  GOARCH=arm64   # dist/gs-darwin-arm64
+```
+## Management modules
+
+### Install
+```bash
+gs --install <module-url@version>
+```
+
+If version attribute is absent then it takes the `latest` version of the module, that is specified in `manifest.json`
+
+### Uninstall
+```bash
+gs --uninstall <author:name>
 ```
 
 ## Usage
