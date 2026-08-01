@@ -147,7 +147,6 @@ func run(target string) error {
 	return nil
 }
 
-// versionString falls back to "dev" for builds made without the release ldflags.
 func versionString() string {
 	if VERSION == "" {
 		return "dev"
