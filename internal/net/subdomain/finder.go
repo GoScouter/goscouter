@@ -33,9 +33,20 @@ const TIMEOUT time.Duration = 5 * time.Second
 const crtShTimeLayout = "2006-01-02T15:04:05"
 
 func normalize(n string) string {
-	n = strings.ToLower(strings.TrimSpace(n))
-	n = strings.TrimPrefix(n, "*.")
-	return n
+
+    n = strings.ToLower(strings.TrimSpace(n))
+
+    n = strings.TrimPrefix(n, "*.")
+
+    if strings.Contains(n, "://") {
+        if u, err := url.Parse(n); err == nil {
+            n = u.Hostname()
+        }
+    }
+
+    n = strings.TrimSuffix(n, "/")
+
+    return n
 }
 
 func keepLatest(latest map[string]time.Time, name string, t time.Time) {
@@ -207,6 +218,23 @@ func FindAll(ctx context.Context, domain string) ([]subdomains.Subdomain, error)
 	ch := make(chan finderResult, len(Finders))
 	var wg sync.WaitGroup
 
+	//finding the wildcard
+	domain = normalize(domain)
+
+	fmt.Println(
+		"Wildcard checking:",
+		domain,
+	);
+	wildcardIPs, wildcard :=
+		DetectWildcard(ctx, domain)
+
+	if wildcard {
+		fmt.Println(
+			"Wildcard DNS detected:",
+			wildcardIPs,
+		)
+	}
+
 	for _, f := range Finders {
 		wg.Add(1)
 		go func(f Finder) {
@@ -229,13 +257,33 @@ func FindAll(ctx context.Context, domain string) ([]subdomains.Subdomain, error)
 			continue
 		}
 		for _, s := range res.subs {
+			if !isSubdomain(s.Name, domain) {
+				continue
+			}
+
 			keepLatest(latest, s.Name, s.LastSeen)
 		}
 	}
 
 	subs := flatten(latest)
+
+
+	if wildcard {
+
+		subs = FilterWildcard(
+			ctx,
+			subs,
+			wildcardIPs,
+		)
+
+	}
+
+
 	if len(subs) == 0 && len(errs) > 0 {
-		return nil, fmt.Errorf("all finders failed: %w", errors.Join(errs...))
+		return nil, fmt.Errorf(
+			"all finders failed: %w",
+			errors.Join(errs...),
+		)
 	}
 
 	return subs, nil
