@@ -72,7 +72,7 @@ func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error
 	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
 	defer cancel()
 
-	found, err := subdomain.FindAll(ctx, target)
+	found, err := subdomain.FindAll(ctx, host)
 	if err != nil {
 		return nil, err
 	}
