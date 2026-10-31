@@ -58,6 +58,10 @@ func hostOf(target string) string {
 }
 
 func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error) {
+	return m.ScoutContext(context.Background(), target, args)
+}
+
+func (m *ScanModule) ScoutContext(ctx context.Context, target string, args []string) (json.RawMessage, error) {
 	started := time.Now()
 	host := hostOf(target)
 	manager := m.Manager
@@ -69,10 +73,10 @@ func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error
 
 	logging.Step("Enumerating subdomains of %s", style.Bold(host))
 
-	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
+	findCtx, cancel := context.WithTimeout(ctx, subdomain.TIMEOUT)
 	defer cancel()
 
-	found, err := subdomain.FindAll(ctx, host)
+	found, err := subdomain.FindAll(findCtx, host)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +84,10 @@ func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error
 	candidates := candidates(found, host)
 	logging.Step("%d unique hosts, resolving", len(candidates))
 
-	hosts := resolve(context.Background(), candidates, order)
+	hosts := resolve(ctx, candidates, order)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	result := scan.Result{
 		Target: target,
@@ -104,6 +111,10 @@ func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error
 	sem := make(chan struct{}, maxConcurrentProbes)
 
 	for mi, m := range order {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		logging.Step("Running %s against %d hosts", style.Bold(m), len(result.Hosts))
 
 		var wg sync.WaitGroup
@@ -118,9 +129,12 @@ func (m *ScanModule) Scout(target string, args []string) (json.RawMessage, error
 
 				slot.Module = m
 
-				data, _, err := RunModule(name, []string{}, m, manager, reporter)
+				data, _, err := RunModule(ctx, name, []string{}, m, manager, reporter)
 				if err != nil {
 					slot.Error = err.Error()
+					if ctx.Err() != nil {
+						return
+					}
 					logging.Failed("%s %s: %v", pad(name), style.Gray(m), err)
 					return
 				}
@@ -200,6 +214,11 @@ func resolve(ctx context.Context, candidates []subdomains.Subdomain, order []str
 	}
 
 	wg.Wait()
+
+	// Cancelled lookups all fail, which would report every host as dead.
+	if ctx.Err() != nil {
+		return nil
+	}
 
 	hosts := make([]scan.HostResult, 0, len(candidates))
 	for i, c := range candidates {

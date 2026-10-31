@@ -24,8 +24,12 @@ func (m *SubdomainsModule) Info() sdk.ModuleInfo {
 	return SdModuleInfo
 }
 
-func (m *SubdomainsModule) Scout(target string, _ []string) (json.RawMessage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), subdomain.TIMEOUT)
+func (m *SubdomainsModule) Scout(target string, args []string) (json.RawMessage, error) {
+	return m.ScoutContext(context.Background(), target, args)
+}
+
+func (m *SubdomainsModule) ScoutContext(ctx context.Context, target string, _ []string) (json.RawMessage, error) {
+	ctx, cancel := context.WithTimeout(ctx, subdomain.TIMEOUT)
 	defer cancel()
 
 	subdomains, err := subdomain.FindAll(ctx, target)

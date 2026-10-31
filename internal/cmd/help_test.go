@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -24,7 +25,7 @@ func TestHelpCommandExecListsCommands(t *testing.T) {
 	m.addCommand(c)
 
 	out := captureStdout(t, func() {
-		if err := c.Exec(nil); err != nil {
+		if err := c.Exec(context.Background(), nil); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})

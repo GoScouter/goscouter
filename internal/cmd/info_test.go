@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"runtime"
 	"strings"
 	"testing"
@@ -24,7 +25,7 @@ func TestInfoCommandExec(t *testing.T) {
 	c := &InfoCommand{}
 
 	out := captureStdout(t, func() {
-		if err := c.Exec(nil); err != nil {
+		if err := c.Exec(context.Background(), nil); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})

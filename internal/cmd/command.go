@@ -1,9 +1,8 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-	"maps"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -15,12 +14,15 @@ import (
 type Command interface {
 	Name() string
 	Description() string
-	Exec(args []string) error
+	Exec(ctx context.Context, args []string) error
 }
 
 type CommandManager struct {
 	Commands map[string]Command
 	Target   string
+
+	Last *Result
+	History func() []string
 }
 
 func (cm *CommandManager) SetTarget(target string) {
@@ -38,6 +40,7 @@ func NewManager(target string, manager *module.Manager) (*CommandManager, error)
 	cm.addCommand(&ClearCommand{})
 	cm.addCommand(&HelpCommand{Manager: cm})
 	cm.addCommand(&TargetCommand{Manager: cm})
+	cm.addCommand(&SaveCommand{Manager: cm})
 
 	if manager == nil {
 		return cm, nil
@@ -69,33 +72,26 @@ func NewManager(target string, manager *module.Manager) (*CommandManager, error)
 	return cm, nil
 }
 
-func filter[T any](s []T, predicate func(T) bool) []T {
-	result := make([]T, 0, len(s)) // Pre-allocate for efficiency
-	for _, v := range s {
-		if predicate(v) {
-			result = append(result, v)
-		}
-	}
-	return result
-}
-
-var namespaceRegex = regexp.MustCompile(`^[A-Za-z]+:[A-Za-z]+$`)
-
 func (cm *CommandManager) Get(name string) (Command, error) {
-	if matches := len(namespaceRegex.FindStringSubmatch(name)); matches > 0 {
-		cmd, ok := cm.Commands[name]
-		if ok {
-			return cmd, nil
+	if cmd, ok := cm.Commands[name]; ok {
+		return cmd, nil
+	}
+
+	var matches []string
+	for key := range cm.Commands {
+		if shortName(key) == name {
+			matches = append(matches, key)
 		}
 	}
 
-	keys := slices.Sorted(maps.Keys(cm.Commands))
-	suffixKeys := filter(keys, func(v string) bool {
-		return strings.HasSuffix(v, name)
-	})
-
-	if len(suffixKeys) > 0 {
-		return cm.Commands[suffixKeys[0]], nil
+	switch len(matches) {
+	case 1:
+		return cm.Commands[matches[0]], nil
+	case 0:
+	default:
+		slices.Sort(matches)
+		return nil, fmt.Errorf("%s is ambiguous, use one of: %s",
+			style.Bold(name), strings.Join(matches, ", "))
 	}
 
 	return nil, fmt.Errorf("unknown command %s\n  %s %s %s",

@@ -2,44 +2,60 @@ package terminal
 
 import (
 	"os"
+)
 
-	"golang.org/x/term"
+const (
+	// Switch to the alternate screen and clear it, like vim does. Leaving it
+	// brings back whatever the terminal showed before.
+	enterAltScreen = "\x1b[?1049h\x1b[H\x1b[2J"
+	leaveAltScreen = "\x1b[?1049l"
 )
 
 type ShellState struct {
 	Fd             int
-	OldState       *term.State
 	CommandHistory []string
-	HistoryIndex   int
+	Screen         *Screen
+
+	historyPath string
+	restore     func() error
 }
 
-func NewShellState() (*ShellState, error) {
-	fd := int(os.Stdin.Fd())
-	oldState, err := term.MakeRaw(fd)
+// The Screen captures os.Stdout and os.Stderr from here on, until Restore.
+func NewShellState(historyPath string) (*ShellState, error) {
+	history, err := loadHistory(historyPath)
 	if err != nil {
+		history = nil
+	}
+	if len(history) > maxHistory {
+		history = history[len(history)-maxHistory:]
+		_ = saveHistory(historyPath, history)
+	}
+
+	fd := int(os.Stdin.Fd())
+	restore, err := makeRaw(fd, int(os.Stdout.Fd()))
+	if err != nil {
+		return nil, err
+	}
+
+	screen, err := startScreen(os.Stdin, os.Stdout)
+	if err != nil {
+		restore()
 		return nil, err
 	}
 
 	return &ShellState{
 		Fd:             fd,
-		OldState:       oldState,
-		CommandHistory: make([]string, 0),
+		CommandHistory: history,
+		Screen:         screen,
+		historyPath:    historyPath,
+		restore:        restore,
 	}, nil
 }
 
 func (state *ShellState) Restore() error {
-	state.HistoryIndex = 0
 	clear(state.CommandHistory)
-	return term.Restore(state.Fd, state.OldState)
-}
-
-func (state *ShellState) Suspend() error {
-	return term.Restore(state.Fd, state.OldState)
-}
-
-func (state *ShellState) Resume() error {
-	_, err := term.MakeRaw(state.Fd)
-	return err
+	state.Screen.Close()
+	return state.restore()
 }
 
 func (state *ShellState) AddHistory(cmd string) {
@@ -47,26 +63,12 @@ func (state *ShellState) AddHistory(cmd string) {
 		return
 	}
 
+	if n := len(state.CommandHistory); n > 0 && state.CommandHistory[n-1] == cmd {
+		return
+	}
+
 	state.CommandHistory = append(state.CommandHistory, cmd)
-}
-
-func (state *ShellState) Move(direction rune) string {
-	historyLen := len(state.CommandHistory)
-	if historyLen == 0 {
-		return ""
+	if state.historyPath != "" {
+		_ = appendHistory(state.historyPath, cmd)
 	}
-
-	if direction == Up {
-		state.HistoryIndex += 1
-		if state.HistoryIndex >= historyLen {
-			state.HistoryIndex = historyLen - 1
-		}
-	} else if direction == Down {
-		state.HistoryIndex -= 1
-		if state.HistoryIndex < 0 {
-			state.HistoryIndex = 0
-		}
-	}
-
-	return state.CommandHistory[state.HistoryIndex]
 }

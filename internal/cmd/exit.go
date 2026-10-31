@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 )
 
@@ -16,6 +17,6 @@ func (cmd *ExitCommand) Description() string {
 
 var ErrExit = errors.New("exit shell")
 
-func (cmd *ExitCommand) Exec(args []string) error {
+func (cmd *ExitCommand) Exec(ctx context.Context, args []string) error {
 	return ErrExit
 }
