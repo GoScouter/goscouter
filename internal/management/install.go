@@ -6,9 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"goscouter/internal/module"
-	"goscouter/internal/utils"
-	"goscouter/pkg/modules"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +15,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"goscouter/internal/module"
+	"goscouter/internal/utils"
+	"goscouter/pkg/modules"
 
 	"github.com/GoScouter/sdk"
 	"github.com/GoScouter/sdk/style"
@@ -115,8 +116,6 @@ type staged struct {
 	outdated string
 }
 
-// install is all or nothing: every artifact is downloaded and verified before
-// any of them is moved into place, so a bad one leaves nothing half installed.
 func (in *installer) install(ctx context.Context, name, version string, artifacts modules.Artifacts) error {
 	names := make(map[string]bool, len(artifacts))
 	for _, a := range artifacts {
@@ -187,8 +186,6 @@ func (in *installer) install(ctx context.Context, name, version string, artifact
 	return nil
 }
 
-// stage downloads and verifies one artifact next to where it will go. It
-// returns nil when that exact binary is already installed.
 func (in *installer) stage(ctx context.Context, a modules.Artifact, version string) (*staged, error) {
 	filename := path.Base(a.Url)
 	target := filepath.Join(in.dir, filename)
