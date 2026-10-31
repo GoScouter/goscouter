@@ -103,7 +103,7 @@ func InstallModule(ctx context.Context, input string) error {
 	}
 
 	step("Downloading %s", style.Dim(artifact.Url))
-	resp, err := http.Get(artifact.Url)
+	resp, err := utils.Get(context.Background(), artifact.Url)
 	if err != nil {
 		return err
 	}

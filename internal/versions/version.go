@@ -16,6 +16,8 @@ import (
 
 	"github.com/GoScouter/sdk/style"
 	"github.com/google/go-github/github"
+
+	"goscouter/internal/utils"
 )
 
 const UPDATE_SUGGESTION = `
@@ -100,12 +102,7 @@ func openAsset(ctx context.Context, client *github.Client, asset github.ReleaseA
 		return body, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, redirect, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.Get(ctx, redirect)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +216,7 @@ func SuggestUpdate(current string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), releaseTimeout)
 	defer cancel()
 
-	client := github.NewClient(nil)
+	client := github.NewClient(utils.HTTPClient)
 	release, _, err := client.Repositories.GetLatestRelease(ctx, OWNER, REPO)
 	if err != nil {
 		return err

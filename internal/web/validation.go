@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
+
+	"goscouter/internal/utils"
 )
 
 const TIMEOUT time.Duration = 5 * time.Second
@@ -14,12 +15,7 @@ func CheckSiteStatus(siteURL string) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, siteURL, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.Get(ctx, siteURL)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return 0, fmt.Errorf("site check timed out after %s", TIMEOUT)

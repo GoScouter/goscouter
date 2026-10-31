@@ -5,6 +5,40 @@ All notable changes to GoScouter are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-10-31
+
+### Added
+
+- Run system shell commands from the prompt by prefixing them with `!`, e.g.
+  `!ls -la`. Commands run through `sh -c` (`cmd /C` on Windows) with full
+  access to the terminal, Ctrl-C stops the command rather than the shell, and
+  a failing command is reported in gray as `process failed`.
+- Wildcard DNS detection for subdomain enumeration: random names under the
+  target are resolved, and if they all point to the same addresses, subdomains
+  resolving to those addresses are filtered out of the results.
+
+### Changed
+
+- Every outbound HTTP request — module installs, the update check, site
+  checks, and subdomain sources — now goes through a shared client that sends
+  a `goscouter/<version>` User-Agent.
+- Typing an unknown command now points to `help` instead of only reporting
+  that the command does not exist.
+- Subdomain enumeration timeout raised from 5 to 15 seconds, since crt.sh
+  alone regularly takes 4-5 seconds to answer.
+
+### Fixed
+
+- Subdomain enumeration no longer fails with `context deadline exceeded` on
+  every source: wildcard detection now runs alongside the sources instead of
+  using up their time budget first, and wildcard filtering gets its own.
+- Subdomain enumeration no longer prints debug lines that broke the shell's
+  layout.
+- Subdomains whose DNS lookup fails are kept instead of being dropped by the
+  wildcard filter.
+- The `scan` command enumerates subdomains of the target's host rather than
+  its full URL, and subdomain names given as URLs are normalized to hostnames.
+
 ## [2.0.0] - 2026-08-02
 
 ### Added

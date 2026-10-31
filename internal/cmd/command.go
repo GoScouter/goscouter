@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"goscouter/internal/module"
+
+	"github.com/GoScouter/sdk/style"
 )
 
 type Command interface {
@@ -96,7 +98,9 @@ func (cm *CommandManager) Get(name string) (Command, error) {
 		return cm.Commands[suffixKeys[0]], nil
 	}
 
-	return nil, fmt.Errorf("%s - command does not exists", name)
+	return nil, fmt.Errorf("unknown command %s\n  %s %s %s",
+		style.Bold(name),
+		style.Gray("type"), style.Bold(style.Cyan("help")), style.Gray("to see the available commands"))
 }
 
 func (cm *CommandManager) addCommand(cmd Command) {

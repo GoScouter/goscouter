@@ -33,6 +33,15 @@ func (state *ShellState) Restore() error {
 	return term.Restore(state.Fd, state.OldState)
 }
 
+func (state *ShellState) Suspend() error {
+	return term.Restore(state.Fd, state.OldState)
+}
+
+func (state *ShellState) Resume() error {
+	_, err := term.MakeRaw(state.Fd)
+	return err
+}
+
 func (state *ShellState) AddHistory(cmd string) {
 	if cmd == "" {
 		return

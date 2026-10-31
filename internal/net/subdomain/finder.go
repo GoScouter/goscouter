@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"goscouter/internal/utils"
 	"goscouter/pkg/subdomains"
 )
 
@@ -27,7 +28,10 @@ var Finders = map[string]Finder{
 	"hackertarget": {Name: "hackertarget", Fetch: fetchHackerTarget},
 }
 
-const TIMEOUT time.Duration = 5 * time.Second
+// crt.sh alone regularly takes 4-5 seconds, so leave it some headroom.
+const TIMEOUT time.Duration = 15 * time.Second
+
+const FILTER_TIMEOUT time.Duration = 5 * time.Second
 
 // crt.sh timestamps carry no timezone, e.g. "2022-12-01T00:00:00".
 const crtShTimeLayout = "2006-01-02T15:04:05"
@@ -69,25 +73,11 @@ func flatten(latest map[string]time.Time) []subdomains.Subdomain {
 	return out
 }
 
-func newRequest(ctx context.Context, rawURL string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "goscouter/1.0")
-	req.Header.Set("Accept", "application/json")
-	return req, nil
-}
-
 func fetchCrtSh(ctx context.Context, domain string) ([]subdomains.Subdomain, error) {
 	q := url.QueryEscape("%." + domain)
 	rawURL := fmt.Sprintf("https://crt.sh/?q=%s&output=json", q)
 
-	req, err := newRequest(ctx, rawURL)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.Get(ctx, rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +114,7 @@ func fetchCertSpotter(ctx context.Context, domain string) ([]subdomains.Subdomai
 		url.QueryEscape(domain),
 	)
 
-	req, err := newRequest(ctx, rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.Get(ctx, rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -162,12 +147,7 @@ func fetchCertSpotter(ctx context.Context, domain string) ([]subdomains.Subdomai
 func fetchHackerTarget(ctx context.Context, domain string) ([]subdomains.Subdomain, error) {
 	rawURL := fmt.Sprintf("https://api.hackertarget.com/hostsearch/?q=%s", url.QueryEscape(domain))
 
-	req, err := newRequest(ctx, rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.Get(ctx, rawURL)
 	if err != nil {
 		return nil, err
 	}
@@ -218,22 +198,19 @@ func FindAll(ctx context.Context, domain string) ([]subdomains.Subdomain, error)
 	ch := make(chan finderResult, len(Finders))
 	var wg sync.WaitGroup
 
-	//finding the wildcard
 	domain = normalize(domain)
 
-	fmt.Println(
-		"Wildcard checking:",
-		domain,
-	);
-	wildcardIPs, wildcard :=
-		DetectWildcard(ctx, domain)
-
-	if wildcard {
-		fmt.Println(
-			"Wildcard DNS detected:",
-			wildcardIPs,
-		)
+	// Wildcard detection is only a few DNS lookups, so run it alongside the
+	// finders instead of spending their time budget before they start.
+	type wildcardResult struct {
+		ips []string
+		ok  bool
 	}
+	wildcardCh := make(chan wildcardResult, 1)
+	go func() {
+		ips, ok := DetectWildcard(ctx, domain)
+		wildcardCh <- wildcardResult{ips: ips, ok: ok}
+	}()
 
 	for _, f := range Finders {
 		wg.Add(1)
@@ -267,17 +244,12 @@ func FindAll(ctx context.Context, domain string) ([]subdomains.Subdomain, error)
 
 	subs := flatten(latest)
 
-
-	if wildcard {
-
-		subs = FilterWildcard(
-			ctx,
-			subs,
-			wildcardIPs,
-		)
-
+	if wc := <-wildcardCh; wc.ok {
+		// The finders may have used up ctx, so filtering gets its own budget.
+		filterCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), FILTER_TIMEOUT)
+		defer cancel()
+		subs = FilterWildcard(filterCtx, subs, wc.ips)
 	}
-
 
 	if len(subs) == 0 && len(errs) > 0 {
 		return nil, fmt.Errorf(
