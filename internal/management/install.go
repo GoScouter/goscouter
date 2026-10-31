@@ -6,9 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"goscouter/internal/module"
-	"goscouter/internal/utils"
-	"goscouter/pkg/modules"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +15,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"goscouter/internal/module"
+	"goscouter/internal/utils"
+	"goscouter/pkg/modules"
 
 	"github.com/GoScouter/sdk"
 	"github.com/GoScouter/sdk/style"
@@ -72,13 +73,9 @@ func InstallModule(ctx context.Context, input string) error {
 	}
 
 	platform := runtime.GOOS + "-" + runtime.GOARCH
-	artifact, ok := vers.Artifacts[platform]
+	artifacts, ok := vers.Artifacts[platform]
 	if !ok {
 		return fmt.Errorf("cannot find matching artifact for your architecture")
-	}
-
-	if artifact.Checksum == "" {
-		return fmt.Errorf("manifest lists no checksum for %s", platform)
 	}
 
 	step("Resolved %s %s for %s", style.Bold(manifest.Name), style.Bold(version), platform)
@@ -91,103 +88,194 @@ func InstallModule(ctx context.Context, input string) error {
 		return err
 	}
 
-	filename := path.Base(artifact.Url)
-	filePath := filepath.Join(modulesDir, filename)
+	manager := module.NewManager()
+	if err := manager.LoadExternals(ctx); err != nil {
+		return err
+	}
 
-	if installed, err := utils.CalculateChecksum(filePath); err == nil {
-		if strings.EqualFold(installed, artifact.Checksum) {
-			return fmt.Errorf("%s %s is already installed at %s", manifest.Name, version, filePath)
+	in := &installer{
+		dir:      modulesDir,
+		manager:  manager,
+		download: download,
+		info:     moduleInfo,
+	}
+	return in.install(ctx, manifest.Name, version, artifacts)
+}
+
+type installer struct {
+	dir      string
+	manager  *module.Manager
+	download func(ctx context.Context, url string) (io.ReadCloser, error)
+	info     func(ctx context.Context, path string) (sdk.ModuleInfo, error)
+}
+
+type staged struct {
+	path     string
+	target   string
+	key      string
+	outdated string
+}
+
+func (in *installer) install(ctx context.Context, name, version string, artifacts modules.Artifacts) error {
+	names := make(map[string]bool, len(artifacts))
+	for _, a := range artifacts {
+		filename := path.Base(a.Url)
+		switch {
+		case a.Url == "":
+			return fmt.Errorf("manifest lists an artifact without a url")
+		case a.Checksum == "":
+			return fmt.Errorf("manifest lists no checksum for %s", filename)
+		case names[filename]:
+			return fmt.Errorf("manifest lists %s twice", filename)
+		}
+		names[filename] = true
+	}
+
+	var ready []*staged
+	discard := func() {
+		for _, s := range ready {
+			os.Remove(s.path)
+		}
+	}
+
+	keys := make(map[string]string, len(artifacts))
+	for _, a := range artifacts {
+		filename := path.Base(a.Url)
+
+		s, err := in.stage(ctx, a, version)
+		if err != nil {
+			discard()
+			if len(artifacts) > 1 {
+				return fmt.Errorf("%s: %w\nnothing was installed", filename, err)
+			}
+			return err
+		}
+		if s == nil {
+			continue
+		}
+
+		if other, taken := keys[s.key]; taken {
+			os.Remove(s.path)
+			discard()
+			return fmt.Errorf("%s and %s are both %s, nothing was installed", other, filename, s.key)
+		}
+		keys[s.key] = filename
+		ready = append(ready, s)
+	}
+
+	if len(ready) == 0 {
+		return fmt.Errorf("%s %s is already installed", name, version)
+	}
+
+	for i, s := range ready {
+		if err := os.Rename(s.path, s.target); err != nil {
+			for _, rest := range ready[i:] {
+				os.Remove(rest.path)
+			}
+			return err
+		}
+		if s.outdated != "" {
+			os.Remove(s.outdated)
+		}
+		step("Installed %s %s to %s", style.Bold(s.key), style.Bold(version), style.Dim(s.target))
+	}
+
+	if len(artifacts) > 1 {
+		step("Installed %d modules from %s %s", len(ready), style.Bold(name), style.Bold(version))
+	}
+	return nil
+}
+
+func (in *installer) stage(ctx context.Context, a modules.Artifact, version string) (*staged, error) {
+	filename := path.Base(a.Url)
+	target := filepath.Join(in.dir, filename)
+
+	if installed, err := utils.CalculateChecksum(target); err == nil {
+		if strings.EqualFold(installed, a.Checksum) {
+			notice("%s is already installed at %s", filename, style.Dim(target))
+			return nil, nil
 		}
 	} else if !os.IsNotExist(err) {
-		return err
+		return nil, err
 	}
 
-	step("Downloading %s", style.Dim(artifact.Url))
-	resp, err := utils.Get(context.Background(), artifact.Url)
+	step("Downloading %s", style.Dim(a.Url))
+	body, err := in.download(ctx, a.Url)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer resp.Body.Close()
+	defer body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("no binary was found (HTTP %d)", resp.StatusCode)
-	}
-
-	staged := filepath.Join(modulesDir, fmt.Sprintf(".%s.download.%d", filename, os.Getpid()))
-	out, err := os.OpenFile(staged, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	tmp := filepath.Join(in.dir, fmt.Sprintf(".%s.download.%d", filename, os.Getpid()))
+	out, err := os.OpenFile(tmp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	hash := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(out, hash), resp.Body); err != nil {
+	if _, err := io.Copy(io.MultiWriter(out, hash), body); err != nil {
 		out.Close()
-		os.Remove(staged)
-		return err
+		os.Remove(tmp)
+		return nil, err
 	}
 	if err := out.Close(); err != nil {
-		os.Remove(staged)
-		return err
+		os.Remove(tmp)
+		return nil, err
 	}
 
 	got := hex.EncodeToString(hash.Sum(nil))
-	if !strings.EqualFold(got, artifact.Checksum) {
-		os.Remove(staged)
-		return fmt.Errorf(
+	if !strings.EqualFold(got, a.Checksum) {
+		os.Remove(tmp)
+		return nil, fmt.Errorf(
 			"checksum mismatch for %s\n  expected: %s\n  actual:   %s\nThe download may be corrupt or tampered with — not installing",
-			filename, artifact.Checksum, got,
+			filename, a.Checksum, got,
 		)
 	}
 
 	step("Checksum verified %s", style.Dim(got))
 
-	manager := module.NewManager()
-	if err := manager.LoadExternals(ctx); err != nil {
-		os.Remove(staged)
-		return err
+	if err := os.Chmod(tmp, 0o755); err != nil {
+		os.Remove(tmp)
+		return nil, err
 	}
 
-	if err := os.Chmod(staged, 0o755); err != nil {
-		os.Remove(staged)
-		return err
-	}
-
-	info, err := moduleInfo(ctx, staged)
+	info, err := in.info(ctx, tmp)
 	if err != nil {
-		os.Remove(staged)
-		return err
+		os.Remove(tmp)
+		return nil, err
 	}
 
 	key := module.Key(module.Namespace(info))
 	step("Module identified as %s", style.Bold(key))
 
-	if manager.GetInternal(key) != nil {
-		os.Remove(staged)
-		return fmt.Errorf("%s is a built-in module", key)
+	if in.manager.GetInternal(key) != nil {
+		os.Remove(tmp)
+		return nil, fmt.Errorf("%s is a built-in module", key)
 	}
 
-	var outdated string
-	if other := manager.GetExternal(key); other != nil && other.Path != filePath {
-		if strings.EqualFold(other.Checksum, artifact.Checksum) {
-			os.Remove(staged)
-			return fmt.Errorf("%s %s is already installed at %s", key, version, other.Path)
+	s := &staged{path: tmp, target: target, key: key}
+	if other := in.manager.GetExternal(key); other != nil && other.Path != target {
+		if strings.EqualFold(other.Checksum, a.Checksum) {
+			os.Remove(tmp)
+			notice("%s %s is already installed at %s", key, version, style.Dim(other.Path))
+			return nil, nil
 		}
-		outdated = other.Path
+		s.outdated = other.Path
 		notice("Replacing older install at %s", style.Dim(other.Path))
 	}
+	return s, nil
+}
 
-	if err := os.Rename(staged, filePath); err != nil {
-		os.Remove(staged)
-		return err
+func download(ctx context.Context, url string) (io.ReadCloser, error) {
+	resp, err := utils.Get(ctx, url)
+	if err != nil {
+		return nil, err
 	}
-
-	if outdated != "" {
-		os.Remove(outdated)
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("no binary was found (HTTP %d)", resp.StatusCode)
 	}
-
-	step("Installed %s %s to %s", style.Bold(key), style.Bold(version), style.Dim(filePath))
-
-	return nil
+	return resp.Body, nil
 }
 
 func step(format string, a ...any) {

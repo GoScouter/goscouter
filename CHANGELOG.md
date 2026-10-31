@@ -5,6 +5,17 @@ All notable changes to GoScouter are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- A module manifest can list several binaries per platform, so one repository
+  can ship several modules (e.g. `recon:ports`, `recon:vhosts` and
+  `recon:dirs`) and one `gs --install` installs them all. Every binary is
+  downloaded and verified before any is installed, and if one fails, nothing
+  is. Binaries that are already installed are skipped. The single-binary
+  format keeps working unchanged.
+
 ## [2.1.0] - 2026-10-31
 
 ### Added
