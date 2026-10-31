@@ -1,30 +1,34 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"os"
 	"os/exec"
 	"runtime"
 )
 
-// ShellPrefix marks a line as a system shell command, e.g. "!ls -la".
 const ShellPrefix = "!"
 
-func RunShell(line string) error {
+func RunShell(ctx context.Context, line string) error {
 	if line == "" {
 		return errors.New("no shell command given")
 	}
 
 	var shell *exec.Cmd
 	if runtime.GOOS == "windows" {
-		shell = exec.Command("cmd", "/C", line)
+		shell = exec.CommandContext(ctx, "cmd", "/C", line)
 	} else {
-		shell = exec.Command("sh", "-c", line)
+		shell = exec.CommandContext(ctx, "sh", "-c", line)
 	}
 
-	shell.Stdin = os.Stdin
 	shell.Stdout = os.Stdout
 	shell.Stderr = os.Stderr
+	killTree(shell)
 
-	return shell.Run()
+	err := shell.Run()
+	if ctx.Err() != nil {
+		return errors.New("interrupted")
+	}
+	return err
 }

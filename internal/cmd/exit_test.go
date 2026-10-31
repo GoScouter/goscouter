@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -18,7 +19,7 @@ func TestExitCommandMetadata(t *testing.T) {
 func TestExitCommandExec(t *testing.T) {
 	c := &ExitCommand{}
 
-	err := c.Exec(nil)
+	err := c.Exec(context.Background(), nil)
 	if !errors.Is(err, ErrExit) {
 		t.Fatalf("expected ErrExit, got %v", err)
 	}
@@ -27,7 +28,7 @@ func TestExitCommandExec(t *testing.T) {
 func TestExitCommandExecIgnoresArgs(t *testing.T) {
 	c := &ExitCommand{}
 
-	if err := c.Exec([]string{"some", "args"}); !errors.Is(err, ErrExit) {
+	if err := c.Exec(context.Background(), []string{"some", "args"}); !errors.Is(err, ErrExit) {
 		t.Fatalf("expected ErrExit regardless of args, got %v", err)
 	}
 }

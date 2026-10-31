@@ -244,7 +244,13 @@ func FindAll(ctx context.Context, domain string) ([]subdomains.Subdomain, error)
 
 	subs := flatten(latest)
 
-	if wc := <-wildcardCh; wc.ok {
+	wc := <-wildcardCh
+	// Running out of time still returns what was found, but a cancel stops here.
+	if errors.Is(ctx.Err(), context.Canceled) {
+		return nil, ctx.Err()
+	}
+
+	if wc.ok {
 		// The finders may have used up ctx, so filtering gets its own budget.
 		filterCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), FILTER_TIMEOUT)
 		defer cancel()

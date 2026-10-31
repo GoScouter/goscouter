@@ -16,6 +16,7 @@ import (
 
 	"goscouter/internal"
 	"goscouter/internal/cmd"
+	"goscouter/internal/logging"
 	"goscouter/internal/module"
 	"goscouter/internal/terminal"
 	"goscouter/internal/utils"
@@ -29,10 +30,7 @@ var (
 	VERSION    string
 )
 
-var (
-	interrupted  atomic.Bool
-	shellRunning atomic.Bool
-)
+var interrupted atomic.Bool
 
 func main() {
 	internal.Version = versionString()
@@ -84,19 +82,25 @@ func main() {
 }
 
 func run(target string) error {
-	printBanner()
-
+	// The update check can prompt and exit, so it runs on the normal screen
+	// before the shell takes over the terminal.
 	if err := versions.SuggestUpdate(VERSION); err != nil {
 		return fmt.Errorf("update check: %w", err)
 	}
 
-	fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(target))
+	historyPath, _ := terminal.HistoryPath()
 
-	state, err := terminal.NewShellState()
+	state, err := terminal.NewShellState(historyPath)
 	if err != nil {
 		return err
 	}
 	defer state.Restore()
+
+	// The logger kept the original stdout, so point it at the screen too.
+	logging.SetOutput(os.Stdout)
+
+	printBanner()
+	fmt.Printf("%s %s\n\n", style.Gray("Target:"), style.Bold(target))
 
 	moduleManager := module.NewManager()
 	if err := moduleManager.LoadExternals(context.Background()); err != nil {
@@ -124,28 +128,29 @@ func run(target string) error {
 	if err != nil {
 		return err
 	}
+	commandManager.History = func() []string { return state.CommandHistory }
+	state.Screen.SetTarget(target)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		for sig := range sigChan {
-			// Ctrl-C while a shell command runs is meant for that command, not for us.
-			if sig == syscall.SIGINT && shellRunning.Load() {
-				continue
-			}
-			interrupted.Store(true)
-			return
-		}
+		<-sigChan
+		interrupted.Store(true)
+		// The prompt is waiting for a key; this wakes it so the shell can exit
+		// and give the terminal back.
+		state.Screen.CloseInput()
 	}()
 
 	runner.CleanupState()
 
-	reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(state.Screen.Input())
 	for !interrupted.Load() {
-		fmt.Print(style.Prompt())
-
-		input, err := terminal.ReadLine(reader, os.Stdout, state)
+		input, err := terminal.ReadLine(reader, os.Stdout, state, terminal.LineOptions{
+			Prompt:   style.Prompt(),
+			Complete: commandManager.Complete,
+			Hint:     commandManager.Hint,
+		})
 		if err != nil {
 			if errors.Is(err, terminal.ErrInterrupted) {
 				// Ctrl-C: abandon the current line and prompt again.
@@ -166,6 +171,10 @@ func run(target string) error {
 
 		state.AddHistory(input)
 
+		// Marks the prompt line above as the start of this command's output,
+		// so it can be folded.
+		fmt.Print(terminal.BlockMarker)
+
 		if line, ok := strings.CutPrefix(input, cmd.ShellPrefix); ok {
 			if err := runShell(state, strings.TrimSpace(line)); err != nil {
 				fmt.Printf("%s\r\n", style.Gray("✗ process failed: "+err.Error()))
@@ -181,10 +190,15 @@ func run(target string) error {
 			continue
 		}
 
-		err = command.Exec(parts[1:])
+		err = execute(state, command, parts[1:])
+		state.Screen.SetTarget(commandManager.Target)
 		if err != nil {
 			if errors.Is(err, cmd.ErrExit) {
 				break
+			}
+			if errors.Is(err, context.Canceled) {
+				fmt.Printf("%s\r\n", style.Gray("✗ cancelled"))
+				continue
 			}
 
 			fmt.Printf("%s\r\n", style.Error(err.Error()))
@@ -196,17 +210,34 @@ func run(target string) error {
 	return nil
 }
 
-// runShell hands the terminal to a system shell command and takes it back afterwards.
-func runShell(state *terminal.ShellState, line string) error {
-	if err := state.Suspend(); err != nil {
-		return err
+func execute(state *terminal.ShellState, command cmd.Command, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	stop := state.Screen.OnInterrupt(cancel)
+	defer stop()
+
+	state.Screen.Busy(command.Name())
+	defer state.Screen.Idle()
+
+	err := command.Exec(ctx, args)
+	if ctx.Err() != nil {
+		return context.Canceled
 	}
-	defer state.Resume()
+	return err
+}
 
-	shellRunning.Store(true)
-	defer shellRunning.Store(false)
+func runShell(state *terminal.ShellState, line string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	return cmd.RunShell(line)
+	stop := state.Screen.OnInterrupt(cancel)
+	defer stop()
+
+	state.Screen.Busy("!" + line)
+	defer state.Screen.Idle()
+
+	return cmd.RunShell(ctx, line)
 }
 
 func versionString() string {

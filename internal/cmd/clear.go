@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"goscouter/internal"
 	"goscouter/internal/utils"
@@ -18,7 +19,7 @@ func (cmd *ClearCommand) Description() string {
 
 const clear = "\033[2J\033[H"
 
-func (cmd *ClearCommand) Exec(args []string) error {
+func (cmd *ClearCommand) Exec(ctx context.Context, args []string) error {
 	fmt.Print(clear)
 	utils.PrintBanner(internal.Version, internal.BuildTime)
 

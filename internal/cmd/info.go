@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strings"
@@ -83,7 +84,7 @@ func infoLines() []string {
 	}
 }
 
-func (cmd *InfoCommand) Exec(args []string) error {
+func (cmd *InfoCommand) Exec(ctx context.Context, args []string) error {
 	info := infoLines()
 
 	logoWidth := 0

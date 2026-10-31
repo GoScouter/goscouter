@@ -212,10 +212,10 @@ func (r *Reporter) Report(namespace sdk.ModuleNamespace, data json.RawMessage) e
 	})
 }
 
-func RunInOrder(info sdk.ModuleInfo, target string, args []string, manager *Manager, reporter *Reporter) ([]json.RawMessage, []string, error) {
+func RunInOrder(ctx context.Context, info sdk.ModuleInfo, target string, args []string, manager *Manager, reporter *Reporter) ([]json.RawMessage, []string, error) {
 	if Namespace(info) == Namespace(SdModuleInfo) {
 		sd := manager.GetInternal(Key(Namespace(SdModuleInfo)))
-		data, err := sd.Scout(target, args)
+		data, err := scout(ctx, sd, target, args)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -236,7 +236,7 @@ func RunInOrder(info sdk.ModuleInfo, target string, args []string, manager *Mana
 	viewOutput := make([]string, 0, len(plan))
 
 	for _, key := range plan {
-		data, view, err := RunModule(target, args, key, manager, reporter)
+		data, view, err := RunModule(ctx, target, args, key, manager, reporter)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -248,7 +248,7 @@ func RunInOrder(info sdk.ModuleInfo, target string, args []string, manager *Mana
 	return dataOutput, viewOutput, nil
 }
 
-func RunModule(target string, args []string, key string, manager *Manager, reporter *Reporter) (json.RawMessage, string, error) {
+func RunModule(ctx context.Context, target string, args []string, key string, manager *Manager, reporter *Reporter) (json.RawMessage, string, error) {
 	author, name, _ := strings.Cut(key, ":")
 	ns := sdk.ModuleNamespace{Author: author, Name: name}
 
@@ -258,7 +258,7 @@ func RunModule(target string, args []string, key string, manager *Manager, repor
 			return nil, "", fmt.Errorf("unknown module %q", key)
 		}
 
-		data, view, err := m.Scout(context.Background(), target, args)
+		data, view, err := m.Scout(ctx, target, args)
 		if err != nil {
 			return nil, "", err
 		}
@@ -275,7 +275,7 @@ func RunModule(target string, args []string, key string, manager *Manager, repor
 		return nil, "", fmt.Errorf("unknown module %q", key)
 	}
 
-	data, err := m.Scout(target, args)
+	data, err := scout(ctx, m, target, args)
 	if err != nil {
 		return nil, "", err
 	}
@@ -285,4 +285,34 @@ func RunModule(target string, args []string, key string, manager *Manager, repor
 	}
 
 	return data, m.Render(data), nil
+}
+
+type ContextModule interface {
+	ScoutContext(ctx context.Context, target string, args []string) (json.RawMessage, error)
+}
+
+// scout runs an internal module under ctx. Modules that can't be cancelled
+// are left to finish in the background, and the caller gets ctx's error
+// right away.
+func scout(ctx context.Context, m sdk.Module, target string, args []string) (json.RawMessage, error) {
+	if cm, ok := m.(ContextModule); ok {
+		return cm.ScoutContext(ctx, target, args)
+	}
+
+	type result struct {
+		data json.RawMessage
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		data, err := m.Scout(target, args)
+		done <- result{data, err}
+	}()
+
+	select {
+	case r := <-done:
+		return r.data, r.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }

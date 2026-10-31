@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 	"os"
 	"strings"
@@ -44,7 +45,7 @@ func TestClearCommandExec(t *testing.T) {
 	c := &ClearCommand{}
 
 	out := captureStdout(t, func() {
-		if err := c.Exec(nil); err != nil {
+		if err := c.Exec(context.Background(), nil); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})

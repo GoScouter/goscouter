@@ -10,9 +10,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Run system shell commands from the prompt by prefixing them with `!`, e.g.
-  `!ls -la`. Commands run through `sh -c` (`cmd /C` on Windows) with full
-  access to the terminal, Ctrl-C stops the command rather than the shell, and
-  a failing command is reported in gray as `process failed`.
+  `!ls -la`. Commands run through `sh -c` (`cmd /C` on Windows), their output
+  goes into the shell's scrollback, Ctrl-C stops the command rather than the
+  shell, and a failing command is reported in gray as `process failed`.
+  Interactive programs such as `vim` are not supported.
+- The shell takes over the terminal like vim does: it opens on a clean screen
+  and gives back what the terminal showed before when it exits.
+- Scrollback: everything printed is kept (up to 5,000 lines) and scrolls with
+  the mouse wheel. While scrolled up, new output doesn't move the view, and
+  typing jumps back to the bottom.
+- Drag with the mouse to select text; releasing copies it to the clipboard
+  (via OSC 52) and shows a "Copied" toast. Pastes show a "Pasted" toast, and
+  newlines in a paste become spaces so a paste never runs a command.
+- Status bar showing the target, the running command with a spinner and
+  elapsed time, the usage of the command being typed, and shortcut tips. Long
+  targets are shortened in the middle, keeping the domain ending (`.co.il`).
+- Ctrl-C cancels the running command. `scan` and `subdomains` stop mid-run,
+  external modules are killed, and other modules are abandoned.
+- Command history is saved between sessions (the last 1,000 commands, in the
+  user config directory under `gs/history`). Ctrl-R searches it.
+- Ctrl-F searches all output, highlighting matches; Enter/↑ and ↓ step
+  through them and Esc closes the search.
+- Clicking a command's prompt line folds its output away, and clicking again
+  brings it back.
+- `save <file>` writes the last module result as JSON (`.json`), a Markdown
+  report (`.md`), or plain text without colors (any other extension).
+- `help <command>` shows a command's usage, short name and flags, and `help`
+  now lists the keyboard and mouse shortcuts.
+- URLs in output are links: terminals that support OSC 8 make them clickable,
+  and Ctrl+click opens them in the browser.
+- Line editing: ←/→, Home/End, Delete, Ctrl-A/E (start/end), Ctrl-U/K (delete
+  to start/end), Ctrl-W (delete word) and Ctrl-L (clear screen).
+- Completion while typing: the rest of the best match shows in gray, and Tab
+  or → accepts it. It completes command names, also from the part after the
+  namespace (`subdo` → `subdomains`), and arguments: flags such as
+  `http --ssl`, previous targets for `target`, command names for `help` and
+  file names for `save`. Tab lists the options when several match.
 - Wildcard DNS detection for subdomain enumeration: random names under the
   target are resolved, and if they all point to the same addresses, subdomains
   resolving to those addresses are filtered out of the results.
@@ -26,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that the command does not exist.
 - Subdomain enumeration timeout raised from 5 to 15 seconds, since crt.sh
   alone regularly takes 4-5 seconds to answer.
+- Commands run by their full name (`internal:dns`) or by their short name
+  (`dns`). A short name shared by two modules is rejected with the full names
+  to choose from, instead of silently running one of them.
+- Running the same command twice in a row adds it to the history once.
+- `Command.Exec` takes a `context.Context`, and internal modules can implement
+  `ScoutContext` to stop when it is cancelled.
 
 ### Fixed
 
@@ -38,6 +77,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wildcard filter.
 - The `scan` command enumerates subdomains of the target's host rather than
   its full URL, and subdomain names given as URLs are normalized to hostnames.
+- Typing part of a name, such as `s` or `p`, no longer runs whichever command
+  happens to end with it (`internal:dns`, `help`).
+- On Linux and macOS, output no longer staircases across the screen: raw mode
+  now applies to input only, so a plain `\n` starts a new line again.
+- ↑ now starts from the last command instead of the second-oldest, and ↓
+  returns to what was being typed.
+- Delete, Home, End and ←/→ no longer leave stray characters such as `~` in
+  the line.
+- SIGTERM (e.g. `kill <pid>`) now closes the shell and restores the terminal;
+  before, it only took effect after the next command was entered.
 
 ## [2.0.0] - 2026-08-02
 

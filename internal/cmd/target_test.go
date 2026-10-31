@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"testing"
 
 	"goscouter/internal/module"
@@ -60,7 +61,7 @@ func TestTargetCommandSetsTarget(t *testing.T) {
 	c := &TargetCommand{Manager: cm}
 
 	out := captureStdout(t, func() {
-		if err := c.Exec([]string{"new.com"}); err != nil {
+		if err := c.Exec(context.Background(), []string{"new.com"}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -78,7 +79,7 @@ func TestTargetCommandShowsCurrentTarget(t *testing.T) {
 	c := &TargetCommand{Manager: cm}
 
 	out := captureStdout(t, func() {
-		if err := c.Exec(nil); err != nil {
+		if err := c.Exec(context.Background(), nil); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -95,10 +96,10 @@ func TestTargetCommandUsageErrors(t *testing.T) {
 	cm := &CommandManager{Commands: make(map[string]Command), Target: "example.com"}
 	c := &TargetCommand{Manager: cm}
 
-	if err := c.Exec([]string{""}); err == nil {
+	if err := c.Exec(context.Background(), []string{""}); err == nil {
 		t.Fatal("expected error for empty target, got nil")
 	}
-	if err := c.Exec([]string{"a", "b"}); err == nil {
+	if err := c.Exec(context.Background(), []string{"a", "b"}); err == nil {
 		t.Fatal("expected error for too many args, got nil")
 	}
 	if cm.Target != "example.com" {
