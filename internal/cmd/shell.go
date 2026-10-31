@@ -10,7 +10,6 @@ import (
 // ShellPrefix marks a line as a system shell command, e.g. "!ls -la".
 const ShellPrefix = "!"
 
-// RunShell runs line with the system shell, wired to the current terminal.
 func RunShell(line string) error {
 	if line == "" {
 		return errors.New("no shell command given")

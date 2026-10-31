@@ -9,7 +9,6 @@ import (
 
 var fixedHeaders = map[string]string{}
 
-// internal.Version is set at startup, so it's read per request.
 func userAgent() string {
 	version := internal.Version
 	if version == "" {
