@@ -29,9 +29,14 @@ var (
 	VERSION    string
 )
 
-var interrupted atomic.Bool
+var (
+	interrupted  atomic.Bool
+	shellRunning atomic.Bool
+)
 
 func main() {
+	internal.Version = versionString()
+
 	version := flag.Bool("version", false, "Returns goscouter cli version")
 	targetSite := flag.String("target", "", "The site to target")
 
@@ -124,8 +129,14 @@ func run(target string) error {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-sigChan
-		interrupted.Store(true)
+		for sig := range sigChan {
+			// Ctrl-C while a shell command runs is meant for that command, not for us.
+			if sig == syscall.SIGINT && shellRunning.Load() {
+				continue
+			}
+			interrupted.Store(true)
+			return
+		}
 	}()
 
 	runner.CleanupState()
@@ -154,6 +165,14 @@ func run(target string) error {
 		}
 
 		state.AddHistory(input)
+
+		if line, ok := strings.CutPrefix(input, cmd.ShellPrefix); ok {
+			if err := runShell(state, strings.TrimSpace(line)); err != nil {
+				fmt.Printf("%s\r\n", style.Gray("✗ process failed: "+err.Error()))
+			}
+			continue
+		}
+
 		parts := strings.Fields(input)
 
 		command, err := commandManager.Get(parts[0])
@@ -175,6 +194,19 @@ func run(target string) error {
 	}
 
 	return nil
+}
+
+// runShell hands the terminal to a system shell command and takes it back afterwards.
+func runShell(state *terminal.ShellState, line string) error {
+	if err := state.Suspend(); err != nil {
+		return err
+	}
+	defer state.Resume()
+
+	shellRunning.Store(true)
+	defer shellRunning.Store(false)
+
+	return cmd.RunShell(line)
 }
 
 func versionString() string {

@@ -33,6 +33,18 @@ func (state *ShellState) Restore() error {
 	return term.Restore(state.Fd, state.OldState)
 }
 
+// Suspend puts the terminal back in its original mode without touching the
+// history, so a child process can use it normally. Call Resume afterwards.
+func (state *ShellState) Suspend() error {
+	return term.Restore(state.Fd, state.OldState)
+}
+
+// Resume puts the terminal back in raw mode after Suspend.
+func (state *ShellState) Resume() error {
+	_, err := term.MakeRaw(state.Fd)
+	return err
+}
+
 func (state *ShellState) AddHistory(cmd string) {
 	if cmd == "" {
 		return
