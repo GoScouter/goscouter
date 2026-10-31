@@ -158,6 +158,36 @@ gs --install <module-url@version>
 
 If version attribute is absent then it takes the `latest` version of the module, that is specified in `manifest.json`
 
+A module repository describes its releases in a `manifest.json` at its root.
+Each version lists, per `<os>-<arch>` platform, the binary to install and its
+SHA-256 checksum:
+
+```json
+{
+  "name": "nginx",
+  "latest": "v3.0.0",
+  "versions": {
+    "v3.0.0": {
+      "artifacts": {
+        "linux-amd64": { "url": "https://.../gs-nginx-module-amd64-linux", "checksum": "<sha256>" }
+      }
+    }
+  }
+}
+```
+
+A repository that ships several modules lists them all per platform, and one
+`gs --install` installs every one of them. All binaries are downloaded and
+verified first; if any of them fails, nothing is installed.
+
+```json
+"linux-amd64": [
+  { "url": "https://.../gs-recon-ports-amd64-linux",  "checksum": "<sha256>" },
+  { "url": "https://.../gs-recon-vhosts-amd64-linux", "checksum": "<sha256>" },
+  { "url": "https://.../gs-recon-dirs-amd64-linux",   "checksum": "<sha256>" }
+]
+```
+
 ### Uninstall
 ```bash
 gs --uninstall <author:name>
